@@ -30,7 +30,7 @@ Every problem we personally hit while building these servers — symptom → cau
 
 | Symptom | Cause | Fix |
 |---------|-------|-----|
-| **Mobs fall through dungeon floors** | Broken vmaps or navmesh | [Known issues #1/#2](../05-data-files/07-known-issues.md) |
+| **Mobs fall through dungeon floors** | Broken vmaps or navmesh | [Known issues #1/#2](05-data-files/07-known-issues.md) |
 | Creatures walk through walls | mmap version mismatch | Regenerate mmaps (generator v9) |
 | Creatures stand still, won't path | mmaps missing for that map | Generate that map's mmaps |
 | Creatures float/sink outdoors | maps version mismatch | Use v1.9 maps |
@@ -60,7 +60,7 @@ Every problem we personally hit while building these servers — symptom → cau
 | Bots vanish seconds after spawn | Session registered with the map | See [LegionBotAI docs](../projects/legionbotai/) (never `AddSession`) |
 | Bots stack on one spot | Formation slot collision | Our formation system fixes this (see docs) |
 | Bots don't attack | Movement/chase interrupted | Our chase re-issue fix (see docs) |
-| Bots fall through floor | Broken vmaps | [Known issues #1](../05-data-files/07-known-issues.md) |
+| Bots fall through floor | Broken vmaps | [Known issues #1](05-data-files/07-known-issues.md) |
 | LFG: bots don't fill roles | Role check not answered | LegionBotAI auto-answers (see docs) |
 | LFG: "wrong roles" with 2 healers | Core rejects >1 healer | Extra healer queues as damage (see docs) |
 | Bots die and never return | No resurrection logic | LegionBotAI auto-resurrects after combat |

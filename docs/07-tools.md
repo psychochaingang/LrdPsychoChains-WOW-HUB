@@ -30,7 +30,7 @@ Built with your core (`-DTOOLS=1`) or from official releases:
 **Tips:**
 - Run them **inside the client folder** or pass `-i <CLIENT_ROOT>`.
 - `mmaps_generator <mapId>` generates a single map — use it for testing instead of all maps.
-- Version-match your tools to your build (see [known issues](../05-data-files/07-known-issues.md)).
+- Version-match your tools to your build (see [known issues](05-data-files/07-known-issues.md)).
 
 ---
 

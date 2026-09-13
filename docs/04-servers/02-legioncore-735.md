@@ -102,7 +102,7 @@ Legion uses **email-format accounts** with a SHA256-based hash:
 .account create <user> <pass>                 # game account, linked to bnet
 ```
 
-Or create directly in `auth.battlenet_accounts` + `auth.account` (the hash is calculated with the core's `CalculateShaPassHash`: uppercase user+pass, SHA256, reversed outer hex — see [09-gm-soap.md](09-gm-soap.md)).
+Or create directly in `auth.battlenet_accounts` + `auth.account` (the hash is calculated with the core's `CalculateShaPassHash`: uppercase user+pass, SHA256, reversed outer hex — see [09-gm-soap.md](../09-gm-soap.md)).
 
 **SEC levels:** 3 = player, 6 = administrator (`.account set gmlevel user 6 1`), 7 = console.
 

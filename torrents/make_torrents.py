@@ -1,6 +1,18 @@
 import os, sys, shutil
 from torrentool.api import Torrent
 
+# ============================================================
+#  CONFIGURE YOUR PATHS (replace the <PLACEHOLDERS>)
+# ============================================================
+ARCHIVES      = r"<ARCHIVES_DIR>"        # folder with client archives (zips/rars)
+LEGION_CLIENT = r"<LEGION_CLIENT_DIR>"   # full Legion 7.3.5.26972 client folder
+SERVER_DATA   = r"<SERVER_DATA_DIR>"     # Legion server data folder (dbc/maps/vmaps/mmaps/...)
+TBC_REPACK    = r"<TBC_REPACK_DIR>"      # TBC client/repack folder
+SPPNXT_DIR    = r"<SPPNXT_DIR>"          # SPPNXT repack folder
+HUB           = r"<HUB_REPO_DIR>"        # this repo folder
+STAGE         = r"<STAGING_DIR>"         # scratch folder for multi-file sets (hardlinks)
+# ============================================================
+
 TRACKERS = [
     "udp://tracker.opentrackr.org:1337/announce",
     "udp://open.tracker.cl:1337/announce",
@@ -9,9 +21,8 @@ TRACKERS = [
     "udp://exodus.desync.com:6969/announce",
 ]
 
-OUT = r"D:\LrdPsychoChains-WOW-HUB\torrents"
-STAGE = r"D:\LrdPsychoChains-WOW-HUB-staging"
-HUB = "LrdPsychoChains WOW HUB"
+OUT = os.path.join(HUB, "torrents")
+HUB_NAME = "LrdPsychoChains WOW HUB"
 
 results = []
 
@@ -50,48 +61,48 @@ def make(src, outname, comment):
     results.append((outname, magnet))
 
 # ---------- single files ----------
-make(r"D:\Downloads\ChromieCraft_3.3.5a.zip",
+make(os.path.join(ARCHIVES, "ChromieCraft_3.3.5a.zip"),
      "wotlk-3.3.5a-chromiecraft-client.torrent",
-     f"WotLK 3.3.5a (12340) ChromieCraft client - {HUB}")
+     f"WotLK 3.3.5a (12340) ChromieCraft client - {HUB_NAME}")
 
-make(r"D:\LegionClient\Wow_Exes.zip",
+make(os.path.join(ARCHIVES, "Wow_Exes.zip"),
      "wow-exes-collection.torrent",
-     f"WoW client executables collection - {HUB}")
+     f"WoW client executables collection - {HUB_NAME}")
 
-make(r"D:\TurtleWoW\_downloads\patch-3-fix-working-talent-and-textures.rar",
+make(os.path.join(ARCHIVES, "patch-3-fix-working-talent-and-textures.rar"),
      "patch-3-turtle-1.17.2.torrent",
-     f"Turtle WoW 1.17.2 talent/texture patch - {HUB}")
+     f"Turtle WoW 1.17.2 talent/texture patch - {HUB_NAME}")
 
 # ---------- multi-file sets (hardlink staging) ----------
 vanilla = hardlink_set("vanilla-turtle-1.17.1-client", [
-    rf"D:\TurtleWoW\_downloads\World.of.Warcraft.1.17.1_build_7100.part{i}.rar" for i in range(1, 6)
+    os.path.join(ARCHIVES, f"World.of.Warcraft.1.17.1_build_7100.part{i}.rar") for i in range(1, 6)
 ])
 make(vanilla, "vanilla-turtle-1.17.1-client.torrent",
-     f"Vanilla / Turtle WoW 1.17.1 (7100) client (5 parts) - {HUB}")
+     f"Vanilla / Turtle WoW 1.17.1 (7100) client (5 parts) - {HUB_NAME}")
 
 repack = hardlink_set("release-repack-win-x64", [
-    rf"D:\TurtleWoW\_downloads\Release_Repack_win_x64_New.part{i}.rar" for i in range(1, 4)
+    os.path.join(ARCHIVES, f"Release_Repack_win_x64_New.part{i}.rar") for i in range(1, 4)
 ])
 make(repack, "release-repack-azerothcore.torrent",
-     f"Server repack (core + data + tools) - {HUB}")
+     f"Server repack (core + data + tools) - {HUB_NAME}")
 
 # ---------- folders ----------
-make(r"D:\Downloads\SPPNXT", "sppnxt-legion-7.3.5-repack.torrent",
-     f"SPPNXT Legion 7.3.5 repack + data - {HUB}")
+make(SPPNXT_DIR, "sppnxt-legion-7.3.5-repack.torrent",
+     f"SPPNXT Legion 7.3.5 repack + data - {HUB_NAME}")
 
-make(r"D:\TBC-2.4.3.8606-Repack", "tbc-2.4.3-8606-client-repack.torrent",
-     f"TBC 2.4.3 (8606) client + repack - {HUB}")
+make(TBC_REPACK, "tbc-2.4.3-8606-client-repack.torrent",
+     f"TBC 2.4.3 (8606) client + repack - {HUB_NAME}")
 
-make(r"D:\LegionClient\WoW_Legion_7.3.5.26972", "legion-7.3.5.26972-client.torrent",
-     f"Legion 7.3.5 (26972) full client - {HUB}")
+make(LEGION_CLIENT, "legion-7.3.5.26972-client.torrent",
+     f"Legion 7.3.5 (26972) full client - {HUB_NAME}")
 
-make(r"D:\TurtleWoW\LegionData", "legion-server-data-26972.torrent",
-     f"Legion 7.3.5 server data (dbc/maps/vmaps/mmaps/cameras/gt) - {HUB}")
+make(SERVER_DATA, "legion-server-data-26972.torrent",
+     f"Legion 7.3.5 server data (dbc/maps/vmaps/mmaps/cameras/gt) - {HUB_NAME}")
 
 # ---------- write summary ----------
 with open(os.path.join(OUT, "MAGNETS.md"), "w", encoding="utf-8") as f:
     f.write("# Torrent Magnet Links\n\n")
-    f.write(f"Generated for the {HUB}.\n\n")
+    f.write(f"Generated for the {HUB_NAME}.\n\n")
     for name, magnet in results:
         f.write(f"## {name}\n```\n{magnet}\n```\n\n")
 
