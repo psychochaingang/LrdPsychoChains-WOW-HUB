@@ -77,13 +77,36 @@ Full walkthrough: [docs/05-data-files/06-extraction-guide.md](../docs/05-data-fi
 
 ---
 
-## Direct Download Links (archive.org mirrors)
+## Torrents (magnet links)
 
-> Uploaded packages appear here as they become available. Each entry links directly to the archive.org item; users can download straight from the item page or via its auto-generated torrent.
+Direct downloads via BitTorrent. `.torrent` files live in [torrents/](../torrents/), full magnet list in [torrents/MAGNETS.md](../torrents/MAGNETS.md).
+
+> **To download:** paste a magnet into qBittorrent/Transmission/any client, or open the `.torrent` file.
+> **To verify:** all packages are listed in [MANIFEST.md](MANIFEST.md) / [CHECKSUMS.txt](CHECKSUMS.txt).
+> **Seeding:** the more people seed, the faster it goes — please seed after downloading.
+
+| Package | Version | Size | Magnet |
+|---------|---------|------|--------|
+| Legion client | 7.3.5.26972 | 67.1 GB | `magnet:?xt=urn:btih:68642a8f58e98f74ff22af46f27d468d29e64022` |
+| Legion server data | 26972 | 12.3 GB | `magnet:?xt=urn:btih:8b32e4b960aebf422fa1eb9205a07291698d84e0` |
+| WotLK client (ChromieCraft) | 3.3.5a.12340 | 16.5 GB | `magnet:?xt=urn:btih:ce9546ab11d0b470c5ae4a60b5ff2adee2e1033b` |
+| TBC client + repack | 2.4.3.8606 | 8 GB | `magnet:?xt=urn:btih:fb18f8b184cf0d1d4d4ccb85c8c9ff1794441c62` |
+| Vanilla / Turtle client | 1.17.1.7100 | 7.7 GB | `magnet:?xt=urn:btih:2b6522c74bbdf6a826aebfdb8c83c15fb29683e4` |
+| Turtle patch | 1.17.2 | 1.9 GB | `magnet:?xt=urn:btih:58c136753a83eea43716ff76d5610bf1ab708075` |
+| SPPNXT Legion repack + data | 7.3.5 | 10.6 GB | `magnet:?xt=urn:btih:87a3e4eb6f78308881230e514b946a1da2ef7fb2` |
+| Server repack (AzerothCore) | — | 4 GB | `magnet:?xt=urn:btih:5166f349eb9f26b63924d8f852e661701cb499f9` |
+| WoW exes collection | many builds | 8.1 GB | `magnet:?xt=urn:btih:0af401133ca768f7847c50efccb81a0d649cf276` |
+
+**Seeding note:** if the swarm is slow, that's normal for a fresh torrent — leave your client running and others will connect via DHT. The Legion client is the biggest (67 GB) — expect it to take a while.
+
+## Archive.org Mirrors
+
+> archive.org items (direct download + their auto-seeded torrents) will be listed here as they are uploaded.
+> Each item page gives a direct download link for every file.
 
 | Package | Version | Size | Link |
 |---------|---------|------|------|
-| *(pending uploads)* | | | |
+| *(uploads in progress)* | | | |
 
 ---
 
