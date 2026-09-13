@@ -44,6 +44,6 @@ magnet:?xt=urn:btih:68642a8f58e98f74ff22af46f27d468d29e64022
 
 ## legion-server-data-26972.torrent
 ```
-magnet:?xt=urn:btih:8b32e4b960aebf422fa1eb9205a07291698d84e0
+magnet:?xt=urn:btih:6acb140de202983257b8f4dda916563a2e39786f
 ```
 

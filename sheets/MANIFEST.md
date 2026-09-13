@@ -23,7 +23,7 @@ Spreadsheet version: [manifest.csv](manifest.csv) · Verify with [CHECKSUMS.txt]
 | 7 | `Release_Repack_win_x64_New.part1-3.rar` | AzerothCore repack (data + tools) | 3.99 GB | `f9826713…` | `<SERVER_ROOT>` |
 | 8 | `(SPPNXT-V9.10.0) [7.3.5] Legion - With Data Files.7z` | Legion 7.3.5 repack | 5.42 GB | `9a407f49…` | `<SERVER_ROOT>\SPPNXT` |
 | 9 | `SPPNXTLegion-Data.7z` | Legion server data | 5.15 GB | `dcf40bb5…` | `<SERVER_ROOT>\SPPNXT\Data` |
-| 10 | LegionData (`dbc/maps/vmaps/mmaps/cameras/gt`) | 26972 data set | 12.3 GB | *(torrent)* | `<SERVER_ROOT>\Data` |
+| 10 | LegionData (`dbc/maps/vmaps/mmaps/cameras/gt`) | 26972 data set | 18.1 GB | *(torrent)* | `<SERVER_ROOT>\Data` |
 
 ## Our Code (in this repo)
 

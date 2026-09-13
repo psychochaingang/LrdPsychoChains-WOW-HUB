@@ -7,7 +7,7 @@ Torrent files + magnet links for the big packages. Full magnet list: [MAGNETS.md
 | Torrent file | Contents | Size |
 |--------------|----------|------|
 | `legion-7.3.5.26972-client.torrent` | Full Legion 7.3.5 client | 67.1 GB |
-| `legion-server-data-26972.torrent` | Legion server data (dbc/maps/vmaps/mmaps/cameras/gt) | 12.3 GB |
+| `legion-server-data-26972.torrent` | Legion server data (dbc/maps/vmaps/mmaps/cameras/gt) | 18.1 GB |
 | `wotlk-3.3.5a-chromiecraft-client.torrent` | WotLK 3.3.5a client | 16.5 GB |
 | `tbc-2.4.3-8606-client-repack.torrent` | TBC 2.4.3 client + repack | 8 GB |
 | `vanilla-turtle-1.17.1-client.torrent` | Vanilla/Turtle 1.17.1 client (5 parts) | 7.7 GB |

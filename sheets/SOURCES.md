@@ -88,7 +88,7 @@ Direct downloads via BitTorrent. `.torrent` files live in [torrents/](../torrent
 | Package | Version | Size | Magnet |
 |---------|---------|------|--------|
 | Legion client | 7.3.5.26972 | 67.1 GB | `magnet:?xt=urn:btih:68642a8f58e98f74ff22af46f27d468d29e64022` |
-| Legion server data | 26972 | 12.3 GB | `magnet:?xt=urn:btih:8b32e4b960aebf422fa1eb9205a07291698d84e0` |
+| Legion server data | 26972 | 18.1 GB | `magnet:?xt=urn:btih:6acb140de202983257b8f4dda916563a2e39786f` |
 | WotLK client (ChromieCraft) | 3.3.5a.12340 | 16.5 GB | `magnet:?xt=urn:btih:ce9546ab11d0b470c5ae4a60b5ff2adee2e1033b` |
 | TBC client + repack | 2.4.3.8606 | 8 GB | `magnet:?xt=urn:btih:fb18f8b184cf0d1d4d4ccb85c8c9ff1794441c62` |
 | Vanilla / Turtle client | 1.17.1.7100 | 7.7 GB | `magnet:?xt=urn:btih:2b6522c74bbdf6a826aebfdb8c83c15fb29683e4` |
