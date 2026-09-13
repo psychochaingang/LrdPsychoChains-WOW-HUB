@@ -15,10 +15,13 @@ STAGE         = r"<STAGING_DIR>"         # scratch folder for multi-file sets (h
 
 TRACKERS = [
     "udp://tracker.opentrackr.org:1337/announce",
-    "udp://open.tracker.cl:1337/announce",
-    "udp://tracker.openbittorrent.com:6969/announce",
-    "udp://tracker.torrent.eu.org:451/announce",
+    "udp://open.stealth.si:80/announce",
     "udp://exodus.desync.com:6969/announce",
+    "udp://tracker.dler.org:6969/announce",
+    "udp://tracker2.dler.org:80/announce",
+    "udp://explodie.org:6969/announce",
+    "udp://tracker.bittor.pw:1337/announce",
+    "udp://tracker.qu.ax:6969/announce",
 ]
 
 OUT = os.path.join(HUB, "torrents")
