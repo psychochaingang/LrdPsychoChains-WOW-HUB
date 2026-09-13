@@ -1,0 +1,17 @@
+# SHA256 Checksums — LrdPsychoChains WOW HUB
+# Generated: 2026-09-12 20:06
+# Verify: Get-FileHash -Algorithm SHA256 "file"
+# Size(GB) | SHA256 | Filename
+   16.46 | fed612104085999e8875f077a5ed1e055aac7faaab413a33fed6a23bc2339732 | ChromieCraft_3.3.5a.zip
+    5.42 | 9a407f490960f35dddac6e94ac04b465cf2e8958ba0096c35ead7b95f82afc31 | (SPPNXT-V9.10.0) [7.3.5] Legion - With Data Files.7z
+    5.15 | dcf40bb5495495852e2229f0f8174eb6f06be94eac278820b6e108693c5cfac9 | SPPNXTLegion-Data.7z
+    8.07 | 56734bdce52aec561bfba530c484e37b88861f3154032db9e4fa66aeba3b94fd | Wow_Exes.zip
+    1.86 | 368a338f0a98b7d52665672421bd5a66e19a5dac5720cbabf5d8fd604f3def70 | patch-3-fix-working-talent-and-textures.rar
+    1.86 | f9826713076f3b0f120e65b2ac56a1a4c74d2103aededcb3142ceba5913d4aa2 | Release_Repack_win_x64_New.part1.rar
+    1.86 | 678a4b43218d7e0ba624260d0519ad433f82da39802623712e322b9d77d3ac92 | Release_Repack_win_x64_New.part2.rar
+    0.28 | 835feff0e34ac73d1e93a0d33f9b626ed8bb8fcc20873d7af695b0ad491e7f9b | Release_Repack_win_x64_New.part3.rar
+    1.86 | dbfbd2063080659ed06dce92f29b8d35ecd2a7391406ee8e96972ef3c1a60fd1 | World.of.Warcraft.1.17.1_build_7100.part1.rar
+    1.86 | d0d17a57e4b319c8030d09c2bd525e398d373198fe3b6ac2259d5f1e394802fd | World.of.Warcraft.1.17.1_build_7100.part2.rar
+    1.86 | 44b6ada053d8e482e2a106d3c9b4dc17490eb1f904917fd6766fd5a316cf1684 | World.of.Warcraft.1.17.1_build_7100.part3.rar
+    1.86 | 1aa5f0b32e05f027ef0cf660894d144fb232edd16fa34004388d64f9eafce36b | World.of.Warcraft.1.17.1_build_7100.part4.rar
+    0.29 | 2f70a7b218b7d3f258a46e849aac6d88a1327eda5f1bc1222fb55fd40e61a0a8 | World.of.Warcraft.1.17.1_build_7100.part5.rar

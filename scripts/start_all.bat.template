@@ -1,0 +1,40 @@
+@echo off
+REM ============================================================
+REM  LegionCore - Start ALL (template)
+REM  Replace the placeholders before use:
+REM    <SERVER_ROOT>  = your server bin folder (contains worldserver.exe)
+REM    <MYSQL_ROOT>   = your MariaDB install folder
+REM ============================================================
+title LegionCore - Start ALL
+set bin=<SERVER_ROOT>
+
+echo [1/4] Checking MariaDB (port 3306)...
+netstat -an | find ":3306" | find "LISTENING" >nul
+if errorlevel 1 (
+  echo    MariaDB not running - starting it...
+  start "MariaDB" /min "<MYSQL_ROOT>\bin\mysqld.exe" --datadir=<MYSQL_ROOT>\data --port=3306
+  timeout /t 12 >nul
+) else (
+  echo    MariaDB already running.
+)
+
+echo [2/4] Checking for another game server on ports 1119/8085...
+set OTHER=0
+for /f "tokens=5" %%a in ('netstat -ano ^| find ":8085" ^| find "LISTENING"') do set OTHER=1
+if "%OTHER%"=="1" (
+  echo    Another server is running - stopping it first...
+  for /f "tokens=5" %%a in ('netstat -ano ^| find ":8085" ^| find "LISTENING"') do taskkill /F /PID %%a >nul 2>&1
+  for /f "tokens=5" %%a in ('netstat -ano ^| find ":1119" ^| find "LISTENING"') do taskkill /F /PID %%a >nul 2>&1
+  timeout /t 6 >nul
+)
+
+echo [3/4] Starting bnetserver...
+start "LegionCore BNetServer" cmd /k "title LegionCore BNetServer && cd /d %bin% && bnetserver.exe"
+
+echo [4/4] Starting worldserver (takes ~1 min)...
+timeout /t 5 >nul
+start "LegionCore WorldServer" cmd /k "title LegionCore WorldServer && cd /d %bin% && worldserver.exe"
+
+echo.
+echo All started.
+pause

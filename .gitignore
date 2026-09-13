@@ -1,0 +1,11 @@
+# OS junk
+Thumbs.db
+Desktop.ini
+*.tmp
+*.log
+
+# Large archives should never be committed here
+*.rar
+*.7z
+*.zip
+*.bin

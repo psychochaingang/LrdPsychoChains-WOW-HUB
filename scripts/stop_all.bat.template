@@ -1,0 +1,13 @@
+@echo off
+REM ============================================================
+REM  LegionCore - Stop ALL (template)
+REM  Kills whatever is listening on the game ports.
+REM  MariaDB is left running (stop it separately if needed).
+REM ============================================================
+title LegionCore - Stop ALL
+echo Stopping the game servers (ports 1119/8085)...
+for /f "tokens=5" %%a in ('netstat -ano ^| find ":8085" ^| find "LISTENING"') do taskkill /F /PID %%a >nul 2>&1
+for /f "tokens=5" %%a in ('netstat -ano ^| find ":1119" ^| find "LISTENING"') do taskkill /F /PID %%a >nul 2>&1
+echo.
+echo Game servers stopped. (MariaDB left running)
+pause

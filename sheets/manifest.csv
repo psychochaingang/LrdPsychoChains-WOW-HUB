@@ -1,0 +1,13 @@
+Package,Version,Type,SizeGB,SHA256,ExtractTo,Source
+World.of.Warcraft.1.17.1_build_7100.part1-5.rar,1.17.1 (7100),Client,7.74,dbfbd2063080659ed06dce92f29b8d35ecd2a7391406ee8e96972ef3c1a60fd1,<CLIENT_ROOT>\Turtle-1.17.2,Tier2
+patch-3-fix-working-talent-and-textures.rar,1.17.2 patch,Patch,1.86,368a338f0a98b7d52665672421bd5a66e19a5dac5720cbabf5d8fd604f3def70,over client folder,Tier2
+ChromieCraft_3.3.5a.zip,3.3.5a (12340),Client,16.46,fed612104085999e8875f077a5ed1e055aac7faaab413a33fed6a23bc2339732,<CLIENT_ROOT>\WotLK,Tier1
+TBC client (repack folder),2.4.3 (8606),Client,8,na,<CLIENT_ROOT>\TBC,Tier2
+WoW_Legion_7.3.5.26972,7.3.5 (26972),Client,67.1,torrent,<CLIENT_ROOT>\Legion,Tier2
+Wow_Exes.zip,multiple builds,Exes,8.07,56734bdce52aec561bfba530c484e37b88861f3154032db9e4fa66aeba3b94fd,client root,Tier2
+Release_Repack_win_x64_New.part1-3.rar,AzerothCore repack,Repack,3.99,f9826713076f3b0f120e65b2ac56a1a4c74d2103aededcb3142ceba5913d4aa2,<SERVER_ROOT>,Tier2
+(SPPNXT-V9.10.0) [7.3.5] Legion - With Data Files.7z,7.3.5 repack,Repack,5.42,9a407f490960f35dddac6e94ac04b465cf2e8958ba0096c35ead7b95f82afc31,<SERVER_ROOT>\SPPNXT,Tier2
+SPPNXTLegion-Data.7z,7.3.5 data,Data,5.15,dcf40bb5495495852e2229f0f8174eb6f06be94eac278820b6e108693c5cfac9,<SERVER_ROOT>\SPPNXT\Data,Tier2
+LegionData (dbc/maps/vmaps/mmaps/cameras/gt),26972 data,Data,12.3,torrent,<SERVER_ROOT>\Data,Tier3
+LegionBotAI,1.0,Code,0.001,repo,projects/legionbotai,Repo
+WotLK Custom Scripts,1.0,Code,0.001,repo,projects/wotlk-custom,Repo
