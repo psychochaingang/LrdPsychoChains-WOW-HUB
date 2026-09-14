@@ -6,7 +6,7 @@
 |---|---|
 | **Version** | 1.17.1 (build 7100), updated to 1.17.2 by Turtle's patcher |
 | **Type** | 32-bit (`WoW.exe`) |
-| **Size** | ~7.6 GB (4-part RAR archive) |
+| **Size** | ~7.7 GB (5-part RAR archive) |
 | **Server core** | Turtle WoW core / vMaNGOS |
 
 > **Note on "1.17"**: Turtle WoW uses its own version numbering (not Blizzard's 1.12.1/5875). Their client is a heavily patched Vanilla client with modern content. It is **not** compatible with standard 1.12 servers, and vice versa.
@@ -15,13 +15,14 @@
 
 ## 1. What you should have
 
-A 4-part RAR set (typical names):
+A 5-part RAR set (typical names):
 
 ```
 World.of.Warcraft.1.17.1_build_7100.part1.rar
 World.of.Warcraft.1.17.1_build_7100.part2.rar
 World.of.Warcraft.1.17.1_build_7100.part3.rar
 World.of.Warcraft.1.17.1_build_7100.part4.rar
+World.of.Warcraft.1.17.1_build_7100.part5.rar
 ```
 
 Plus optionally a patch archive (e.g. `patch-3-fix-working-talent-and-textures.rar`) for updated talents/textures.
@@ -33,7 +34,7 @@ Plus optionally a patch archive (e.g. `patch-3-fix-working-talent-and-textures.r
 3. You should end up with a folder containing `WoW.exe`, `Data/`, `Interface/`, `WTF/`, etc.
 
 **Verify:**
-- Right-click `WoW.exe` → Properties → Details → FileVersion should show `1, 17, 1, 7100`
+- `WoW.exe` reports FileVersion `1, 12, 1, 5875` — that is **normal** (Turtle keeps Blizzard's exe version). The Turtle build shows in `TWPatcher.exe` (1.1.6.0) and the extracted folder name `World of Warcraft 1.17.1_build_7100`.
 - The `Data/` folder contains MPQ files (`common.MPQ`, `patch.MPQ`, `patch-3.MPQ`...)
 
 ## 3. Configure it for a private server

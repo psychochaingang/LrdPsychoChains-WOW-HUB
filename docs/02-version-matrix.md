@@ -28,7 +28,7 @@ A WoW installation is identified by **expansion + version + build**:
 
 | Expansion | Version | Build | Type | Our source | Server core | Status |
 |-----------|---------|-------|------|-----------|-------------|--------|
-| Vanilla / Turtle WoW | 1.17.1 → 1.17.2 | 7100 (custom) | 32-bit | 4-part RAR archive | Turtle core / vMaNGOS | ✅ tested |
+| Vanilla / Turtle WoW | 1.17.1 → 1.17.2 | 7100 (custom) | 32-bit | 5-part RAR archive | Turtle core / vMaNGOS | ✅ tested |
 | The Burning Crusade | 2.4.3 | **8606** | 32-bit | repack folder | CMaNGOS-TBC / TC 2.4.3 | ✅ tested |
 | Wrath of the Lich King | 3.3.5a | **12340** | 32-bit | ChromieCraft zip | **AzerothCore** + mod-playerbots | ✅ tested |
 | Legion | 7.3.5 | **26972** | 64-bit | RAR parts (mislabeled "26792"!) | **LegionCore** + LegionBotAI | ✅ tested |
