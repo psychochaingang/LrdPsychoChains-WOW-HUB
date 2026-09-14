@@ -9,7 +9,7 @@ Spreadsheet version: [manifest.csv](manifest.csv) · Verify with [CHECKSUMS.txt]
 
 | # | Package | Version | Size | SHA256 (short) | Extract to |
 |---|---------|---------|------|----------------|------------|
-| 1 | `World.of.Warcraft.1.17.1_build_7100.part1-5.rar` | Vanilla/Turtle 1.17.1 (7100) | 7.74 GB | `dbfbd206…` | `<CLIENT_ROOT>\Turtle-1.17.2` |
+| 1 | `World.of.Warcraft.1.17.1_build_7100.part1-5.rar` | Vanilla/Turtle 1.17.1 (7100) | 7.71 GB | `dbfbd206…` | `<CLIENT_ROOT>\Turtle-1.17.2` |
 | 2 | `patch-3-fix-working-talent-and-textures.rar` | Turtle 1.17.2 patch | 1.86 GB | `368a338f…` | over client folder |
 | 3 | `ChromieCraft_3.3.5a.zip` | WotLK 3.3.5a (12340) | 16.46 GB | `fed61210…` | `<CLIENT_ROOT>\WotLK` |
 | 4 | TBC client (in repack folder) | TBC 2.4.3 (8606) | ~8 GB | — | `<CLIENT_ROOT>\TBC` |

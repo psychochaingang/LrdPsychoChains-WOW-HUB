@@ -8,7 +8,7 @@ Every version in this hub at a glance. Full details in [docs/02-version-matrix.m
 
 | Expansion | Version | Build | Bits | Our package | Server core |
 |-----------|---------|-------|------|-------------|-------------|
-| Vanilla / Turtle | 1.17.1 | 7100 | 32 | 4-part RAR | Turtle / vMaNGOS |
+| Vanilla / Turtle | 1.17.1 | 7100 | 32 | 5-part RAR | Turtle / vMaNGOS |
 | Turtle (patched) | 1.17.2 | — | 32 | patch RAR | Turtle core |
 | The Burning Crusade | 2.4.3 | **8606** | 32 | repack folder | CMaNGOS-TBC |
 | Wrath of the Lich King | 3.3.5a | **12340** | 32 | ChromieCraft zip | **AzerothCore** |
