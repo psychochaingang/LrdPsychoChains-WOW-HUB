@@ -15,3 +15,12 @@
     1.86 | 44b6ada053d8e482e2a106d3c9b4dc17490eb1f904917fd6766fd5a316cf1684 | World.of.Warcraft.1.17.1_build_7100.part3.rar
     1.86 | 1aa5f0b32e05f027ef0cf660894d144fb232edd16fa34004388d64f9eafce36b | World.of.Warcraft.1.17.1_build_7100.part4.rar
     0.29 | 2f70a7b218b7d3f258a46e849aac6d88a1327eda5f1bc1222fb55fd40e61a0a8 | World.of.Warcraft.1.17.1_build_7100.part5.rar
+
+# --- archive.org wrapper archives (created 2026-09-13) ---
+# Multi-part RAR sets and the Legion server data folders are distributed as
+# single store-mode zip files on archive.org. These are the zip checksums.
+    3.99 | a8ff6a4b02addca9fc166a46c518107e83266af9e3a727c9c8d73385265458d4 | Release_Repack_win_x64_New.rar.parts.zip
+    7.71 | 9b04a367096091aee2f843cf8e894d3d74654a0d0a77698046105caa9663eae2 | World_of_Warcraft_1.17.1_build_7100.rar.parts.zip
+    0.84 | 0a94467b1b9f08b16ac9d84e196b3d7bf9d8173bafe6eda91e650dfc8aa7115a | legion-data-maps.zip
+    5.93 | 7a4d69831783c2304671aadd70b2b7530f785bb92e3315a53782ceed0fe47292 | legion-data-mmaps.zip
+   10.50 | 99f59a1baa18eb21c093b98fa671be6f747a26d2bee668093fc6201997767805 | legion-data-vmaps.zip
