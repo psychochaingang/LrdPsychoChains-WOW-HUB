@@ -15,7 +15,7 @@ On top of the legal side, there are **hard technical limits**:
 | Max file size | 100 MB per file (hard block) |
 | Recommended repo size | under 1 GB |
 | Practical repo ceiling | ~5 GB |
-| Our collection | **~134 GB** (clients + data + repacks) |
+| Our collection | **~142 GB** (clients + data + repacks) |
 
 So hosting the files here is both **against copyright** and **physically impossible**. This repo hosts only:
 

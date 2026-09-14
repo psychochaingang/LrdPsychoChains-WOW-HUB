@@ -128,4 +128,4 @@ Full link lists live in [sheets/SOURCES.md](../sheets/SOURCES.md). Summary:
 
 ## 7. Why we can't just include them
 
-134 GB of copyrighted client data + GitHub's 100 MB/file limit + DMCA = impossible. See [01-legal-and-hosting.md](01-legal-and-hosting.md) for the full explanation and our safe distribution model.
+142 GB of copyrighted client data + GitHub's 100 MB/file limit + DMCA = impossible. See [01-legal-and-hosting.md](01-legal-and-hosting.md) for the full explanation and our safe distribution model.
