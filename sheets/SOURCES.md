@@ -106,7 +106,20 @@ Direct downloads via BitTorrent. `.torrent` files live in [torrents/](../torrent
 
 | Package | Version | Size | Link |
 |---------|---------|------|------|
-| *(uploads in progress)* | | | |
+| Legion client | 7.3.5.26972 | 67.1 GB | https://archive.org/details/lrdpsychochains-legion-7.3.5.26972-client |
+| Legion server data (archives) | 7.3.5.26972 | 17.3 GB | https://archive.org/details/lrdpsychochains-legion-26972-server-data-archives |
+| WotLK client | 3.3.5a.12340 | 16.5 GB | https://archive.org/details/lrdpsychochains-wotlk-3.3.5a-12340-client |
+| SPPNXT repack + data | 7.3.5 | 10.6 GB | https://archive.org/details/lrdpsychochains-sppnxt-legion-repack |
+| WoW exes collection | many builds | 8.1 GB | https://archive.org/details/lrdpsychochains-wow-exes-collection |
+| TBC client + repack | 2.4.3.8606 | 8.0 GB | https://archive.org/details/lrdpsychochains-tbc-2.4.3.8606-client |
+| Vanilla / Turtle client | 1.17.1.7100 | 7.7 GB | https://archive.org/details/lrdpsychochains-vanilla-turtle-1.17.1-client |
+| Server repack | — | 4.0 GB | https://archive.org/details/lrdpsychochains-server-repack |
+| Turtle patch | 1.17.2 | 1.9 GB | https://archive.org/details/lrdpsychochains-turtle-1.17.2-patch |
+
+**Packaging notes:**
+- Legion server data archives: `maps`, `mmaps` and `vmaps` are provided as zip archives (extract over your `Data` folder). Single files keep archive.org's per-item task queue from being overwhelmed.
+- Vanilla / Turtle client and Server repack: the multi-part RAR sets are wrapped in one store-mode zip (archive.org rejects multi-volume RAR sets). Unzip, then unpack the RAR parts as usual.
+- Each item page has a direct download for every file plus archive.org's own auto-seeded torrent.
 
 ---
 
