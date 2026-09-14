@@ -9,3 +9,7 @@ Desktop.ini
 *.7z
 *.zip
 *.bin
+
+# Python
+__pycache__/
+*.pyc
