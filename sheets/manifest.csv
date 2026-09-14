@@ -1,5 +1,5 @@
 Package,Version,Type,SizeGB,SHA256,ExtractTo,Source
-World.of.Warcraft.1.17.1_build_7100.part1-5.rar,1.17.1 (7100),Client,7.74,dbfbd2063080659ed06dce92f29b8d35ecd2a7391406ee8e96972ef3c1a60fd1,<CLIENT_ROOT>\Turtle-1.17.2,Tier2
+World.of.Warcraft.1.17.1_build_7100.part1-5.rar,1.17.1 (7100),Client,7.71,dbfbd2063080659ed06dce92f29b8d35ecd2a7391406ee8e96972ef3c1a60fd1,<CLIENT_ROOT>\Turtle-1.17.2,Tier2
 patch-3-fix-working-talent-and-textures.rar,1.17.2 patch,Patch,1.86,368a338f0a98b7d52665672421bd5a66e19a5dac5720cbabf5d8fd604f3def70,over client folder,Tier2
 ChromieCraft_3.3.5a.zip,3.3.5a (12340),Client,16.46,fed612104085999e8875f077a5ed1e055aac7faaab413a33fed6a23bc2339732,<CLIENT_ROOT>\WotLK,Tier1
 TBC client (repack folder),2.4.3 (8606),Client,8,na,<CLIENT_ROOT>\TBC,Tier2
