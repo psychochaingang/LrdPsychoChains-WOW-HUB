@@ -1,4 +1,4 @@
-import os, sys, shutil
+import os, shutil
 from torrentool.api import Torrent
 
 # ============================================================
