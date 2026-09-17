@@ -37,6 +37,8 @@ void LegionBot_DismissAll(Player* owner, ChatHandler* handler);
 std::vector<ObjectGuid> LegionBot_GetBotsOf(ObjectGuid ownerGuid);
 void LegionBot_DebugInfo(Player* owner, ChatHandler* handler);
 bool LegionBot_ToggleSelfAI(Player* player);
+void LegionBot_LevelCommand(Player* owner, std::string const& arg, ChatHandler* handler);
+void LegionBot_AutogearTeam(Player* owner, ChatHandler* handler);
 
 namespace
 {
@@ -413,12 +415,12 @@ public:
     {
         static std::vector<ChatCommand> addCommandTable =
         {
-            { "playerbot", SEC_PLAYER, true, &HandlePlayerbotCommand, "LegionBotAI: team | spawn <name> | self | dismiss | info | creatures" }
+            { "playerbot", SEC_PLAYER, true, &HandlePlayerbotCommand, "LegionBotAI: team | spawn <name> | self | dismiss | info | level | autogear | creatures" }
         };
 
         static std::vector<ChatCommand> CommandTable =
         {
-            { "lbot", SEC_PLAYER, true, &HandlePlayerbotCommand, "LegionBotAI: team | spawn <name> | self | dismiss | info | creatures" },
+            { "lbot", SEC_PLAYER, true, &HandlePlayerbotCommand, "LegionBotAI: team | spawn <name> | self | dismiss | info | level | autogear | creatures" },
             { "add", SEC_PLAYER, true, nullptr, "", addCommandTable }
         };
 
@@ -456,7 +458,7 @@ public:
         }
 
         // Console/SOAP: ".lbot <playerName> <role|spawn> [charName]"
-        bool const isRoleKeyword = (first == "spawn" || first == "team" || first == "creatures" || first == "tank" || first == "healer" || first == "dps" || first == "dismiss" || first == "self" || first == "rescue");
+        bool const isRoleKeyword = (first == "spawn" || first == "team" || first == "creatures" || first == "tank" || first == "healer" || first == "dps" || first == "dismiss" || first == "self" || first == "rescue" || first == "level" || first == "autogear");
         if (!target && !first.empty() && !isRoleKeyword)
         {
             target = ObjectAccessor::FindPlayerByName(first);
@@ -535,6 +537,32 @@ public:
                 else
                     handler->SendSysMessage("|cff33ff99Playerbot:|r a registered bot is not in the world.");
             }
+            return true;
+        }
+
+        // ".lbot level sync|max|<n>" - how the team levels (playerbot-style)
+        if (first == "level")
+        {
+            if (!target)
+            {
+                handler->SendSysMessage("|cffff4444LegionBot:|r this command requires a player.");
+                handler->SetSentErrorMessage(true);
+                return false;
+            }
+            LegionBot_LevelCommand(target, second, handler);
+            return true;
+        }
+
+        // ".lbot autogear" - re-equip the team with level-appropriate gear
+        if (first == "autogear")
+        {
+            if (!target)
+            {
+                handler->SendSysMessage("|cffff4444LegionBot:|r this command requires a player.");
+                handler->SetSentErrorMessage(true);
+                return false;
+            }
+            LegionBot_AutogearTeam(target, handler);
             return true;
         }
 

@@ -31,6 +31,7 @@
 #include "WorldSession.h"
 
 #include <algorithm>
+#include <cstdlib>
 #include <map>
 #include <mutex>
 #include <string>
@@ -56,8 +57,12 @@ namespace
     std::map<ObjectGuid, uint32> g_legionBotLastCastTime;        // bot guid -> ms of last cast attempt
     std::map<ObjectGuid, uint8> g_legionBotSlot;                 // bot guid -> formation slot (0..3)
     std::map<ObjectGuid, std::map<uint32, uint32>> g_legionBotSpellCooldowns; // bot guid -> spell -> next allowed (ms)
-    std::set<ObjectGuid> g_legionPlayerAi;                       // players with self-AI enabled
-    std::mutex g_legionBotsMutex;
+std::set<ObjectGuid> g_legionPlayerAi;                       // players with self-AI enabled
+std::mutex g_legionBotsMutex;
+
+// --- Level / autogear state (playerbot-style leveling) ---
+std::map<ObjectGuid, uint32> g_legionBotLastLevelCheck;      // owner guid -> ms of last level sync
+std::map<uint32, std::vector<uint32>> g_legionBotGearCache;  // race*100000+class*1000+level -> item entries
 
     // Dungeon consumables (Mists of Pandaria)
     uint32 const LB_HEALTH_POTION_ID = 76097;   // Master Healing Potion
@@ -166,15 +171,298 @@ namespace
                 bot->addSpell(spellId, true, false, false, false);
     }
 
-    // Equip the bot with its class gear set (replacing any old gear)
-    void EquipBotGear(Player* bot)
+    // ------------------------------------------------------------------
+    // Level / autogear (playerbot-style: bots level with the player and
+    // auto-equip gear that fits their level - basic starting gear at 1)
+    // ------------------------------------------------------------------
+
+    enum LegionBotLevelMode : uint8
+    {
+        LB_LEVEL_SYNC  = 0,   // bots follow the owner's level
+        LB_LEVEL_MAX   = 1,   // bots at max level
+        LB_LEVEL_FIXED = 2    // bots at a specific level
+    };
+
+    struct LegionBotSettings
+    {
+        uint8 levelMode  = LB_LEVEL_SYNC;
+        uint8 fixedLevel = 1;
+        bool  loaded     = false;
+    };
+
+    std::map<ObjectGuid, LegionBotSettings> g_legionBotSettings;
+
+    void EnsureLegionBotSettingsTable()
+    {
+        static bool created = false;
+        if (created)
+            return;
+        created = true;
+        CharacterDatabase.Execute(
+            "CREATE TABLE IF NOT EXISTS `character_legionbot_settings` ("
+            "`guid` INT UNSIGNED NOT NULL,"
+            "`level_mode` TINYINT UNSIGNED NOT NULL DEFAULT 0,"
+            "`fixed_level` TINYINT UNSIGNED NOT NULL DEFAULT 1,"
+            "PRIMARY KEY (`guid`)) ENGINE=InnoDB DEFAULT CHARSET=utf8");
+    }
+
+    LegionBotSettings& GetLegionBotSettings(Player* owner)
+    {
+        LegionBotSettings& s = g_legionBotSettings[owner->GetGUID()];
+        if (!s.loaded)
+        {
+            s.loaded = true;
+            EnsureLegionBotSettingsTable();
+            if (QueryResult r = CharacterDatabase.PQuery(
+                    "SELECT level_mode, fixed_level FROM character_legionbot_settings WHERE guid = %u",
+                    owner->GetGUID().GetCounter()))
+            {
+                Field* f = r->Fetch();
+                s.levelMode = f[0].GetUInt8();
+                s.fixedLevel = f[1].GetUInt8();
+                if (s.levelMode > LB_LEVEL_FIXED)
+                    s.levelMode = LB_LEVEL_SYNC;
+                if (s.fixedLevel < 1)
+                    s.fixedLevel = 1;
+            }
+        }
+        return s;
+    }
+
+    void SaveLegionBotSettings(Player* owner)
+    {
+        LegionBotSettings const& s = GetLegionBotSettings(owner);
+        EnsureLegionBotSettingsTable();
+        CharacterDatabase.PExecute(
+            "INSERT INTO character_legionbot_settings (guid, level_mode, fixed_level) VALUES (%u, %u, %u) "
+            "ON DUPLICATE KEY UPDATE level_mode = VALUES(level_mode), fixed_level = VALUES(fixed_level)",
+            owner->GetGUID().GetCounter(), uint32(s.levelMode), uint32(s.fixedLevel));
+    }
+
+    uint8 GetLegionBotTargetLevel(Player* owner)
+    {
+        LegionBotSettings& s = GetLegionBotSettings(owner);
+        switch (s.levelMode)
+        {
+            case LB_LEVEL_MAX:   return uint8(sWorld->getIntConfig(CONFIG_MAX_PLAYER_LEVEL));
+            case LB_LEVEL_FIXED: return s.fixedLevel;
+            default:             return owner->getLevel();
+        }
+    }
+
+    // Natural quality ceiling while leveling (white -> green -> blue)
+    uint8 QualityCapForLevel(uint8 level)
+    {
+        if (level < 10)
+            return 1;
+        if (level < 25)
+            return 2;
+        return 3;
+    }
+
+    // Best item for one slot at a level (0 = none found)
+    uint32 PickItemForSlot(Player* bot, uint8 level, uint8 itemClass, uint8 armorSubclass,
+                           uint32 weaponSubclassMask, uint8 invType, uint8 primaryStat,
+                           uint8 qualityCap, std::vector<uint32> const& exclude)
+    {
+        std::string subclassClause;
+        if (itemClass == ITEM_CLASS_WEAPON)
+        {
+            subclassClause = " AND subclass IN (";
+            bool first = true;
+            for (uint8 sc = 0; sc < 32; ++sc)
+            {
+                if (weaponSubclassMask & (1u << sc))
+                {
+                    if (!first)
+                        subclassClause += ",";
+                    subclassClause += std::to_string(uint32(sc));
+                    first = false;
+                }
+            }
+            subclassClause += ")";
+        }
+        else
+            subclassClause = " AND subclass = " + std::to_string(uint32(armorSubclass));
+
+        std::string excludeClause;
+        if (!exclude.empty())
+        {
+            excludeClause = " AND entry NOT IN (";
+            for (size_t i = 0; i < exclude.size(); ++i)
+            {
+                if (i)
+                    excludeClause += ",";
+                excludeClause += std::to_string(exclude[i]);
+            }
+            excludeClause += ")";
+        }
+
+        uint32 const classMask = (bot->getClass() < 32) ? (1u << (bot->getClass() - 1)) : 0;
+        uint32 const raceMask  = (bot->getRace() < 32) ? (1u << (bot->getRace() - 1)) : 0;
+        uint32 const ilvlCap   = uint32(level) * 3 + 30;
+
+        std::string query =
+            "SELECT entry FROM item_template WHERE class = " + std::to_string(uint32(itemClass)) + subclassClause +
+            " AND InventoryType = " + std::to_string(uint32(invType)) +
+            " AND RequiredLevel <= " + std::to_string(uint32(level)) +
+            " AND Quality <= " + std::to_string(uint32(qualityCap)) +
+            " AND ItemLevel > 0 AND ItemLevel <= " + std::to_string(ilvlCap) +
+            " AND ScalingStatDistribution = 0 AND maxcount = 0" + excludeClause +
+            " AND name NOT LIKE 'Deprecated%' AND name NOT LIKE 'QR %' AND name NOT LIKE 'DB%'"
+            " AND name NOT LIKE '% - PH%' AND name NOT LIKE '%(Test)%' AND name NOT LIKE 'Test %'" +
+            " AND (AllowableClass = -1 OR AllowableClass = 0 OR (AllowableClass & " + std::to_string(classMask) + ") <> 0)" +
+            " AND (AllowableRace = -1 OR AllowableRace = 0 OR (AllowableRace & " + std::to_string(raceMask) + ") <> 0)";
+
+        if (primaryStat)
+            query += " AND (stat_type1 = " + std::to_string(uint32(primaryStat)) +
+                     " OR stat_type2 = " + std::to_string(uint32(primaryStat)) +
+                     " OR stat_type3 = " + std::to_string(uint32(primaryStat)) +
+                     " OR stat_type4 = " + std::to_string(uint32(primaryStat)) +
+                     " OR stat_type5 = " + std::to_string(uint32(primaryStat)) + ")";
+
+        query += " ORDER BY ItemLevel DESC, Quality DESC LIMIT 1";
+
+        if (QueryResult r = WorldDatabase.Query(query.c_str()))
+            return r->Fetch()[0].GetUInt32();
+        return 0;
+    }
+
+    // Basic starting items - exactly what a fresh character of this race/class gets
+    std::vector<uint32> GetStartingGear(Player* bot)
+    {
+        std::vector<uint32> items;
+        if (QueryResult r = WorldDatabase.PQuery(
+                "SELECT itemid FROM playercreateinfo_item WHERE (race = %u OR race = 0) AND (class = %u OR class = 0)",
+                uint32(bot->getRace()), uint32(bot->getClass())))
+        {
+            do
+            {
+                uint32 itemId = r->Fetch()[0].GetUInt32();
+                if (itemId)
+                    items.push_back(itemId);
+            } while (r->NextRow());
+        }
+        return items;
+    }
+
+    // Level-appropriate gear picked from the item DB (class/armor/weapon aware)
+    std::vector<uint32> PickGearForLevel(Player* bot, uint8 level)
+    {
+        uint32 const cacheKey = uint32(bot->getRace()) * 100000 + uint32(bot->getClass()) * 1000 + level;
+        auto cached = g_legionBotGearCache.find(cacheKey);
+        if (cached != g_legionBotGearCache.end())
+            return cached->second;
+
+        uint8 armorSubclass = ITEM_SUBCLASS_ARMOR_CLOTH;
+        uint8 primaryStat   = ITEM_MOD_INTELLECT;
+        uint32 weaponMask   = (1u << 10);   // staff
+        uint8 weaponInvType = 17;
+        bool  useShield     = false;
+
+        switch (bot->getClass())
+        {
+            case CLASS_DEATH_KNIGHT:
+            case CLASS_WARRIOR:
+                armorSubclass = ITEM_SUBCLASS_ARMOR_PLATE;
+                primaryStat   = ITEM_MOD_STRENGTH;
+                weaponMask    = (1u << 1) | (1u << 5) | (1u << 8) | (1u << 6); // 2H axe/mace/sword, polearm
+                weaponInvType = 17;
+                break;
+            case CLASS_PALADIN:
+                armorSubclass = ITEM_SUBCLASS_ARMOR_PLATE;
+                primaryStat   = ITEM_MOD_INTELLECT;
+                weaponMask    = (1u << 4) | (1u << 7);   // 1H mace/sword
+                weaponInvType = 13;
+                useShield     = true;
+                break;
+            case CLASS_ROGUE:
+                armorSubclass = ITEM_SUBCLASS_ARMOR_LEATHER;
+                primaryStat   = ITEM_MOD_AGILITY;
+                weaponMask    = (1u << 15) | (1u << 7);  // dagger, 1H sword
+                weaponInvType = 13;
+                break;
+            default: // priest + anything else
+                armorSubclass = ITEM_SUBCLASS_ARMOR_CLOTH;
+                primaryStat   = ITEM_MOD_INTELLECT;
+                weaponMask    = (1u << 10);              // staff
+                weaponInvType = 17;
+                break;
+        }
+
+        uint8 const cap = QualityCapForLevel(level);
+        std::vector<uint32> items;
+
+        // Armor slots: head, neck, shoulders, chest, waist, legs, feet, wrist, hands, back, ring, trinket
+        uint8 const armorInvTypes[] = { 1, 2, 3, 5, 6, 7, 8, 9, 10, 16, 11, 12 };
+        for (uint8 invType : armorInvTypes)
+        {
+            uint32 entry = 0;
+            for (uint8 c = cap; c <= 4 && !entry; ++c)
+            {
+                entry = PickItemForSlot(bot, level, ITEM_CLASS_ARMOR, armorSubclass, 0, invType, primaryStat, c, items);
+                if (!entry)
+                    entry = PickItemForSlot(bot, level, ITEM_CLASS_ARMOR, armorSubclass, 0, invType, 0, c, items);
+            }
+            if (entry)
+                items.push_back(entry);
+        }
+
+        // Second ring + second trinket (distinct entries where possible)
+        uint8 const extraInvTypes[] = { 11, 12 };
+        for (uint8 invType : extraInvTypes)
+        {
+            uint32 entry = 0;
+            for (uint8 c = cap; c <= 4 && !entry; ++c)
+                entry = PickItemForSlot(bot, level, ITEM_CLASS_ARMOR, armorSubclass, 0, invType, primaryStat, c, items);
+            if (entry)
+                items.push_back(entry);
+        }
+
+        // Weapon (falls back to no primary-stat filter if nothing matches)
+        uint32 weapon = 0;
+        for (uint8 c = cap; c <= 4 && !weapon; ++c)
+        {
+            weapon = PickItemForSlot(bot, level, ITEM_CLASS_WEAPON, 0, weaponMask, weaponInvType, primaryStat, c, items);
+            if (!weapon)
+                weapon = PickItemForSlot(bot, level, ITEM_CLASS_WEAPON, 0, weaponMask, weaponInvType, 0, c, items);
+        }
+        if (weapon)
+            items.push_back(weapon);
+
+        if (useShield)
+        {
+            uint32 shield = 0;
+            for (uint8 c = cap; c <= 4 && !shield; ++c)
+                shield = PickItemForSlot(bot, level, ITEM_CLASS_ARMOR, ITEM_SUBCLASS_ARMOR_SHIELD, 0, 14, 0, c, items);
+            if (shield)
+                items.push_back(shield);
+        }
+
+        g_legionBotGearCache[cacheKey] = items;
+        return items;
+    }
+
+    // Level-appropriate gear: starting kit at 1, picked by level, max set at cap
+    std::vector<uint32> GetBotGearForLevel(Player* bot, uint8 level)
+    {
+        uint8 const maxLevel = uint8(sWorld->getIntConfig(CONFIG_MAX_PLAYER_LEVEL));
+        if (level >= maxLevel)
+            return GetBotGear(bot->getClass());
+        if (level <= 1)
+            return GetStartingGear(bot);
+        return PickGearForLevel(bot, level);
+    }
+
+    // Equip the bot with gear that fits its level (replacing any old gear)
+    void EquipBotGear(Player* bot, uint8 level)
     {
         // Strip all currently equipped items (handles class changes and stale gear)
         for (uint8 slot = EQUIPMENT_SLOT_START; slot < EQUIPMENT_SLOT_END; ++slot)
             if (bot->GetItemByPos(INVENTORY_SLOT_BAG_0, slot))
                 bot->DestroyItem(INVENTORY_SLOT_BAG_0, slot, true);
 
-        for (uint32 itemId : GetBotGear(bot->getClass()))
+        for (uint32 itemId : GetBotGearForLevel(bot, level))
         {
             uint16 dest = 0;
             InventoryResult result = bot->CanEquipNewItem(NULL_SLOT, dest, itemId, false, true);
@@ -186,6 +474,11 @@ namespace
             if (result == EQUIP_ERR_OK)
                 bot->EquipNewItem(dest, itemId, true);
         }
+    }
+
+    void EquipBotGear(Player* bot)
+    {
+        EquipBotGear(bot, bot->getLevel());
     }
 
     // Guarded spell cast with self-managed cooldowns.
@@ -622,6 +915,11 @@ void LegionBot_DebugInfo(Player* owner, ChatHandler* handler)
     std::vector<ObjectGuid> bots = LegionBot_GetBotsOf(owner->GetGUID());
     uint32 now = getMSTime();
 
+    LegionBotSettings const& settings = GetLegionBotSettings(owner);
+    char const* modeName = settings.levelMode == LB_LEVEL_MAX ? "max" : (settings.levelMode == LB_LEVEL_FIXED ? "fixed" : "sync");
+    handler->PSendSysMessage("|cff33ff99LegionBot:|r level mode |cffffff00%s|r (target %u) | %u bot(s) online",
+        modeName, uint32(GetLegionBotTargetLevel(owner)), uint32(bots.size()));
+
     for (ObjectGuid botGuid : bots)
     {
         Player* bot = ObjectAccessor::FindPlayer(botGuid);
@@ -651,12 +949,93 @@ void LegionBot_DebugInfo(Player* owner, ChatHandler* handler)
         uint32 mainHandEntry = mainHand ? mainHand->GetEntry() : 0;
         Unit* victim = bot->getVictim();
 
-        handler->PSendSysMessage("|cff33ff99Bot|r %s role %u | %s hp %.0f%% | combat %d victim %s (%.1f yd) | mainhand %u | spells %u | lastCast %u (%u s ago)",
-            bot->GetName(), role, bot->isDead() ? "DEAD" : "alive", bot->GetHealthPct(), bot->isInCombat() ? 1 : 0,
+        handler->PSendSysMessage("|cff33ff99Bot|r %s (lvl %u) role %u | %s hp %.0f%% | combat %d victim %s (%.1f yd) | mainhand %u | spells %u | lastCast %u (%u s ago)",
+            bot->GetName(), uint32(bot->getLevel()), role, bot->isDead() ? "DEAD" : "alive", bot->GetHealthPct(), bot->isInCombat() ? 1 : 0,
             victim ? victim->GetName() : "-", victim ? bot->GetDistance(victim) : -1.0f,
             mainHandEntry, uint32(bot->GetSpellMap().size()),
             lastCast, lastCastTime ? (now - lastCastTime) / 1000 : 0);
     }
+}
+
+// ---------------------------------------------------------------------------
+// Level / autogear command API (used by the command script)
+// ---------------------------------------------------------------------------
+
+void LegionBot_LevelCommand(Player* owner, std::string const& arg, ChatHandler* handler)
+{
+    if (!owner || !handler)
+        return;
+
+    LegionBotSettings& s = GetLegionBotSettings(owner);
+    uint8 const maxLevel = uint8(sWorld->getIntConfig(CONFIG_MAX_PLAYER_LEVEL));
+
+    if (arg == "sync")
+    {
+        s.levelMode = LB_LEVEL_SYNC;
+        SaveLegionBotSettings(owner);
+        handler->PSendSysMessage("|cff33ff99LegionBot:|r level mode = |cffffff00sync|r (bots follow your level, you are %u).", owner->getLevel());
+    }
+    else if (arg == "max")
+    {
+        s.levelMode = LB_LEVEL_MAX;
+        SaveLegionBotSettings(owner);
+        handler->PSendSysMessage("|cff33ff99LegionBot:|r level mode = |cffffff00max|r (bots set to %u).", maxLevel);
+    }
+    else if (!arg.empty())
+    {
+        int requested = atoi(arg.c_str());
+        if (requested < 1 || requested > maxLevel)
+        {
+            handler->PSendSysMessage("|cffff4444LegionBot:|r level must be between 1 and %u.", maxLevel);
+            handler->SetSentErrorMessage(true);
+            return;
+        }
+        s.levelMode = LB_LEVEL_FIXED;
+        s.fixedLevel = uint8(requested);
+        SaveLegionBotSettings(owner);
+        handler->PSendSysMessage("|cff33ff99LegionBot:|r level mode = |cffffff00fixed %u|r.", requested);
+    }
+    else
+    {
+        handler->PSendSysMessage("|cff33ff99LegionBot:|r usage: .lbot level sync | max | <1-%u>", maxLevel);
+        return;
+    }
+
+    // Apply immediately to the whole team
+    uint8 const target = GetLegionBotTargetLevel(owner);
+    for (ObjectGuid botGuid : LegionBot_GetBotsOf(owner->GetGUID()))
+    {
+        Player* bot = ObjectAccessor::FindPlayer(botGuid);
+        if (!bot || !bot->IsInWorld())
+            continue;
+        if (bot->getLevel() != target)
+        {
+            bot->GiveLevel(target);
+            LearnBotSpells(bot);
+            EquipBotGear(bot, target);
+        }
+    }
+}
+
+void LegionBot_AutogearTeam(Player* owner, ChatHandler* handler)
+{
+    if (!owner || !handler)
+        return;
+
+    uint32 count = 0;
+    for (ObjectGuid botGuid : LegionBot_GetBotsOf(owner->GetGUID()))
+    {
+        Player* bot = ObjectAccessor::FindPlayer(botGuid);
+        if (!bot || !bot->IsInWorld())
+            continue;
+        EquipBotGear(bot, bot->getLevel());
+        ++count;
+    }
+
+    if (count)
+        handler->PSendSysMessage("|cff33ff99LegionBot:|r autogear applied to %u bot(s) at their current levels.", count);
+    else
+        handler->PSendSysMessage("|cffff4444LegionBot:|r no bots online - spawn the team first (.lbot team).");
 }
 
 void LegionBot_Spawn(Player* owner, std::string const& charName, ChatHandler* handler, uint8 role = 255)
@@ -869,9 +1248,12 @@ void LegionBot_Spawn(Player* owner, std::string const& charName, ChatHandler* ha
 
     sObjectAccessor->AddObject(bot);
 
-    // Learn the class ability kit + equip the heirloom set
+    // Apply the owner's level mode, learn the class kit, gear for that level
+    uint8 const spawnLevel = GetLegionBotTargetLevel(owner);
+    if (bot->getLevel() != spawnLevel)
+        bot->GiveLevel(spawnLevel);
     LearnBotSpells(bot);
-    EquipBotGear(bot);
+    EquipBotGear(bot, spawnLevel);
 
     // Dungeon consumables: potions in the backpack
     bot->AddItem(LB_HEALTH_POTION_ID, 20);
@@ -1107,6 +1489,37 @@ void LegionBot_OnPlayerUpdate(Player* player, uint32 /*diff*/)
 
     if (botGuids.empty())
         return;
+
+    // Level sync (every 2s): keep the team at the owner's chosen level
+    {
+        uint32 const now = getMSTime();
+        bool doSync = false;
+        {
+            std::lock_guard<std::mutex> lock(g_legionBotsMutex);
+            uint32& last = g_legionBotLastLevelCheck[player->GetGUID()];
+            if (last == 0 || now - last >= 2000)
+            {
+                last = now;
+                doSync = true;
+            }
+        }
+        if (doSync)
+        {
+            uint8 const target = GetLegionBotTargetLevel(player);
+            for (ObjectGuid botGuid : botGuids)
+            {
+                Player* bot = ObjectAccessor::FindPlayer(botGuid);
+                if (!bot || !bot->IsInWorld() || bot->isDead())
+                    continue;
+                if (bot->getLevel() != target)
+                {
+                    bot->GiveLevel(target);
+                    LearnBotSpells(bot);
+                    EquipBotGear(bot, target);
+                }
+            }
+        }
+    }
 
     for (ObjectGuid botGuid : botGuids)
     {

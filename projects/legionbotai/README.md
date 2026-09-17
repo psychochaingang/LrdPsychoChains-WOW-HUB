@@ -38,7 +38,11 @@ All commands work in-game **and** from console/SOAP.
 | `.lbot team` | Spawn the full 4-bot dungeon team |
 | `.lbot spawn <characterName>` | Spawn a specific character as a bot |
 | `.lbot dismiss` | Dismiss all your bots |
-| `.lbot info` | Diagnostic: role, HP, combat, victim, gear, last cast |
+| `.lbot info` | Diagnostic: mode, level, role, HP, combat, victim, gear, last cast |
+| `.lbot level sync` | Bots level WITH you (default) - they match your level |
+| `.lbot level max` | Set the whole team to max level |
+| `.lbot level <1-110>` | Set the whole team to a fixed level |
+| `.lbot autogear` | Re-equip the team with gear that fits their level |
 | `.lbot self` | Toggle self-AI (the bot AI plays your character) |
 | `.lbot rescue` | Revive + teleport home (unstuck) |
 | `.lbot creatures` | Spawn the NPC creature companion team (older system) |
@@ -54,6 +58,27 @@ All commands work in-game **and** from console/SOAP.
 | **Faith** | Holy Priest | Healer (DPS when free) |
 
 *(Character names/classes are configurable in `LegionBotMgr.cpp` — the team command spawns whatever characters you list.)*
+
+---
+
+## 🎚️ Leveling & Autogear (playerbot-style)
+
+Bots behave like real characters that level alongside you:
+
+- **`sync` mode (default):** a level-1 character gets **level-1 bots** with basic starting gear.
+  They level up with you and re-equip automatically - the gear follows a natural quality curve
+  (white → green → blue as you level) picked from the item database for their class
+  (cloth/leather/plate, correct weapon type, primary stat).
+- **`max` mode:** `.lbot level max` sets the team to max level with the endgame set
+  (Mists of Pandaria crafted, ilvl 384 - works well on 7.3.5).
+- **fixed mode:** `.lbot level <n>` pins the team at a specific level.
+- **`.lbot autogear`** re-equips the team on demand at their current level.
+- The chosen mode is **saved per character** (table `character_legionbot_settings` in the
+  characters DB, created automatically) and survives restarts.
+- Gear cache + level sync run cheaply in the background (2s tick, no DB spam).
+
+**Recommended:** create the bot characters at **level 1** in the SQL below - the level mode
+takes over from there. `character_homebind` is still mandatory.
 
 ---
 
@@ -101,7 +126,7 @@ INSERT INTO characters
   (guid, account, name, race, class, gender, level, map, position_x, position_y, position_z, orientation,
    taximask, online, specialization, currentpetnumber, petslot)
 VALUES
-  (900000, 3, 'Bulwark', 9, 6, 0, 87, 1, -10225.2, -2401.87, 28.11, -0.20,
+  (900000, 3, 'Bulwark', 9, 6, 0, 1, 1, -10225.2, -2401.87, 28.11, -0.20,
    '', 0, 250, 0, 0);
 
 INSERT INTO character_homebind (guid, mapId, zoneId, posX, posY, posZ)
