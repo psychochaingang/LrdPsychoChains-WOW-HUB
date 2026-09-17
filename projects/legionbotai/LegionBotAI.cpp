@@ -63,6 +63,15 @@ std::mutex g_legionBotsMutex;
 // --- Level / autogear state (playerbot-style leveling) ---
 std::map<ObjectGuid, uint32> g_legionBotLastLevelCheck;      // owner guid -> ms of last level sync
 std::map<uint32, std::vector<uint32>> g_legionBotGearCache;  // race*100000+class*1000+level -> item entries
+std::map<ObjectGuid, std::pair<ObjectGuid, uint32>> g_legionBotTargetSince; // bot guid -> (target guid, ms engaged)
+
+// Bots wait this long after picking a new target before attacking, so the
+// owner always gets the first swing in (playerbot-style "let the player pull").
+uint32 const LB_ENGAGE_DELAY_MS = 1200;
+
+// Bots only engage targets this close to the owner - they fight WITH you,
+// never run across the map after something you tagged from range.
+float const LB_MAX_ENGAGE_DISTANCE = 30.0f;
 
     // Dungeon consumables (Mists of Pandaria)
     uint32 const LB_HEALTH_POTION_ID = 76097;   // Master Healing Potion
@@ -183,11 +192,19 @@ std::map<uint32, std::vector<uint32>> g_legionBotGearCache;  // race*100000+clas
         LB_LEVEL_FIXED = 2    // bots at a specific level
     };
 
+    enum LegionBotAssistMode : uint8
+    {
+        LB_ASSIST_FULL   = 0, // bots fight everything you fight (default)
+        LB_ASSIST_DEFEND = 1, // bots only fight mobs that attack you
+        LB_ASSIST_CHILL  = 2  // bots never attack (follow/heal/buff only)
+    };
+
     struct LegionBotSettings
     {
         uint8 levelMode  = LB_LEVEL_SYNC;
         uint8 fixedLevel = 1;
         bool  playerTank = false;   // true = the PLAYER holds aggro (bots don't taunt/boost threat)
+        uint8 assistMode = LB_ASSIST_FULL;
         bool  loaded     = false;
     };
 
@@ -206,11 +223,15 @@ std::map<uint32, std::vector<uint32>> g_legionBotGearCache;  // race*100000+clas
             "`level_mode` TINYINT UNSIGNED NOT NULL DEFAULT 0,"
             "`fixed_level` TINYINT UNSIGNED NOT NULL DEFAULT 1,"
             "`player_tank` TINYINT UNSIGNED NOT NULL DEFAULT 0,"
+            "`assist_mode` TINYINT UNSIGNED NOT NULL DEFAULT 0,"
             "PRIMARY KEY (`guid`)) ENGINE=InnoDB DEFAULT CHARSET=utf8");
-        // Upgrade existing installs (table created before player_tank existed)
+        // Upgrade existing installs (columns added after the table was first created)
         CharacterDatabase.DirectExecute(
             "ALTER TABLE `character_legionbot_settings` ADD COLUMN IF NOT EXISTS "
             "`player_tank` TINYINT UNSIGNED NOT NULL DEFAULT 0");
+        CharacterDatabase.DirectExecute(
+            "ALTER TABLE `character_legionbot_settings` ADD COLUMN IF NOT EXISTS "
+            "`assist_mode` TINYINT UNSIGNED NOT NULL DEFAULT 0");
     }
 
     LegionBotSettings& GetLegionBotSettings(Player* owner)
@@ -221,17 +242,20 @@ std::map<uint32, std::vector<uint32>> g_legionBotGearCache;  // race*100000+clas
             s.loaded = true;
             EnsureLegionBotSettingsTable();
             if (QueryResult r = CharacterDatabase.PQuery(
-                    "SELECT level_mode, fixed_level, player_tank FROM character_legionbot_settings WHERE guid = %u",
+                    "SELECT level_mode, fixed_level, player_tank, assist_mode FROM character_legionbot_settings WHERE guid = %u",
                     owner->GetGUID().GetCounter()))
             {
                 Field* f = r->Fetch();
                 s.levelMode = f[0].GetUInt8();
                 s.fixedLevel = f[1].GetUInt8();
                 s.playerTank = f[2].GetUInt8() != 0;
+                s.assistMode = f[3].GetUInt8();
                 if (s.levelMode > LB_LEVEL_FIXED)
                     s.levelMode = LB_LEVEL_SYNC;
                 if (s.fixedLevel < 1)
                     s.fixedLevel = 1;
+                if (s.assistMode > LB_ASSIST_CHILL)
+                    s.assistMode = LB_ASSIST_FULL;
             }
         }
         return s;
@@ -242,9 +266,9 @@ std::map<uint32, std::vector<uint32>> g_legionBotGearCache;  // race*100000+clas
         LegionBotSettings const& s = GetLegionBotSettings(owner);
         EnsureLegionBotSettingsTable();
         CharacterDatabase.PExecute(
-            "INSERT INTO character_legionbot_settings (guid, level_mode, fixed_level, player_tank) VALUES (%u, %u, %u, %u) "
-            "ON DUPLICATE KEY UPDATE level_mode = VALUES(level_mode), fixed_level = VALUES(fixed_level), player_tank = VALUES(player_tank)",
-            owner->GetGUID().GetCounter(), uint32(s.levelMode), uint32(s.fixedLevel), uint32(s.playerTank ? 1 : 0));
+            "INSERT INTO character_legionbot_settings (guid, level_mode, fixed_level, player_tank, assist_mode) VALUES (%u, %u, %u, %u, %u) "
+            "ON DUPLICATE KEY UPDATE level_mode = VALUES(level_mode), fixed_level = VALUES(fixed_level), player_tank = VALUES(player_tank), assist_mode = VALUES(assist_mode)",
+            owner->GetGUID().GetCounter(), uint32(s.levelMode), uint32(s.fixedLevel), uint32(s.playerTank ? 1 : 0), uint32(s.assistMode));
     }
 
     uint8 GetLegionBotTargetLevel(Player* owner)
@@ -953,8 +977,9 @@ void LegionBot_DebugInfo(Player* owner, ChatHandler* handler)
 
     LegionBotSettings const& settings = GetLegionBotSettings(owner);
     char const* modeName = settings.levelMode == LB_LEVEL_MAX ? "max" : (settings.levelMode == LB_LEVEL_FIXED ? "fixed" : "sync");
-    handler->PSendSysMessage("|cff33ff99LegionBot:|r level mode |cffffff00%s|r (target %u) | %u bot(s) online",
-        modeName, uint32(GetLegionBotTargetLevel(owner)), uint32(bots.size()));
+    char const* assistName = settings.assistMode == LB_ASSIST_DEFEND ? "defend" : (settings.assistMode == LB_ASSIST_CHILL ? "chill" : "full");
+    handler->PSendSysMessage("|cff33ff99LegionBot:|r level |cffffff00%s|r (target %u) | assist |cffffff00%s|r | aggro |cffffff00%s|r | %u bot(s) online",
+        modeName, uint32(GetLegionBotTargetLevel(owner)), assistName, settings.playerTank ? "you" : "bot", uint32(bots.size()));
 
     for (ObjectGuid botGuid : bots)
     {
@@ -1096,6 +1121,37 @@ void LegionBot_TankCommand(Player* owner, std::string const& arg, ChatHandler* h
     else
     {
         handler->PSendSysMessage("|cff33ff99LegionBot:|r usage: .lbot aggro me | bot");
+    }
+}
+
+void LegionBot_AssistCommand(Player* owner, std::string const& arg, ChatHandler* handler)
+{
+    if (!owner || !handler)
+        return;
+
+    LegionBotSettings& s = GetLegionBotSettings(owner);
+
+    if (arg == "full")
+    {
+        s.assistMode = LB_ASSIST_FULL;
+        SaveLegionBotSettings(owner);
+        handler->PSendSysMessage("|cff33ff99LegionBot:|r assist = |cffffff00full|r - bots fight everything you fight (they wait a moment so you get the first hit).");
+    }
+    else if (arg == "defend")
+    {
+        s.assistMode = LB_ASSIST_DEFEND;
+        SaveLegionBotSettings(owner);
+        handler->PSendSysMessage("|cff33ff99LegionBot:|r assist = |cffffff00defend|r - bots only fight mobs that attack you.");
+    }
+    else if (arg == "chill")
+    {
+        s.assistMode = LB_ASSIST_CHILL;
+        SaveLegionBotSettings(owner);
+        handler->PSendSysMessage("|cff33ff99LegionBot:|r assist = |cffffff00chill|r - bots never attack (follow, heal, buff only).");
+    }
+    else
+    {
+        handler->PSendSysMessage("|cff33ff99LegionBot:|r usage: .lbot assist full | defend | chill");
     }
 }
 
@@ -1764,9 +1820,19 @@ void LegionBot_OnPlayerUpdate(Player* player, uint32 /*diff*/)
             }
         }
 
-        // Target selection: tank saves the owner, dps assists the tank (healers never attack)
+        // Target selection (respects the assist mode)
         Unit* target = nullptr;
-        if (role == LB_ROLE_TANK)
+        if (settings.assistMode == LB_ASSIST_CHILL)
+        {
+            // chill: bots never attack - they follow, heal and buff only
+            target = nullptr;
+        }
+        else if (settings.assistMode == LB_ASSIST_DEFEND)
+        {
+            // defend: only fight mobs that are attacking the owner
+            target = player->getAttackerForHelper();
+        }
+        else if (role == LB_ROLE_TANK)
         {
             target = player->getAttackerForHelper();
             if (!target)
@@ -1822,7 +1888,8 @@ void LegionBot_OnPlayerUpdate(Player* player, uint32 /*diff*/)
                         }
                 }
             }
-            if (tauntTarget && tauntTarget->isAlive() && tauntTarget != bot->getVictim() && bot->IsValidAttackTarget(tauntTarget))
+            if (tauntTarget && tauntTarget->isAlive() && tauntTarget != bot->getVictim() && bot->IsValidAttackTarget(tauntTarget)
+                && player->GetDistance(tauntTarget) <= LB_MAX_ENGAGE_DISTANCE)
             {
                 if (bot->getClass() == CLASS_DEATH_KNIGHT)
                 {
@@ -1838,8 +1905,25 @@ void LegionBot_OnPlayerUpdate(Player* player, uint32 /*diff*/)
             }
         }
 
-        if (target && target->isAlive() && bot->IsValidAttackTarget(target))
+        if (target && target->isAlive() && bot->IsValidAttackTarget(target) &&
+            player->GetDistance(target) <= LB_MAX_ENGAGE_DISTANCE)
         {
+            // Give the owner the first swing: wait briefly after picking a new target
+            uint32 const nowMs = getMSTime();
+            uint32 engageAt = 0;
+            {
+                std::lock_guard<std::mutex> lock(g_legionBotsMutex);
+                auto& since = g_legionBotTargetSince[bot->GetGUID()];
+                if (since.first != target->GetGUID())
+                {
+                    since.first = target->GetGUID();
+                    since.second = nowMs;
+                }
+                engageAt = since.second;
+            }
+            if (nowMs - engageAt < LB_ENGAGE_DELAY_MS)
+                continue;
+
             if (bot->getVictim() != target)
                 bot->Attack(target, true);
 

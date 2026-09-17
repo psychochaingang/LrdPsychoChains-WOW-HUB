@@ -40,6 +40,7 @@ bool LegionBot_ToggleSelfAI(Player* player);
 void LegionBot_LevelCommand(Player* owner, std::string const& arg, ChatHandler* handler);
 void LegionBot_AutogearTeam(Player* owner, ChatHandler* handler);
 void LegionBot_TankCommand(Player* owner, std::string const& arg, ChatHandler* handler);
+void LegionBot_AssistCommand(Player* owner, std::string const& arg, ChatHandler* handler);
 
 namespace
 {
@@ -416,12 +417,12 @@ public:
     {
         static std::vector<ChatCommand> addCommandTable =
         {
-            { "playerbot", SEC_PLAYER, true, &HandlePlayerbotCommand, "LegionBotAI: team | spawn <name> | self | dismiss | info | level | autogear | aggro | creatures" }
+            { "playerbot", SEC_PLAYER, true, &HandlePlayerbotCommand, "LegionBotAI: team | spawn <name> | self | dismiss | info | level | autogear | aggro | assist | creatures" }
         };
 
         static std::vector<ChatCommand> CommandTable =
         {
-            { "lbot", SEC_PLAYER, true, &HandlePlayerbotCommand, "LegionBotAI: team | spawn <name> | self | dismiss | info | level | autogear | aggro | creatures" },
+            { "lbot", SEC_PLAYER, true, &HandlePlayerbotCommand, "LegionBotAI: team | spawn <name> | self | dismiss | info | level | autogear | aggro | assist | creatures" },
             { "add", SEC_PLAYER, true, nullptr, "", addCommandTable }
         };
 
@@ -459,7 +460,7 @@ public:
         }
 
         // Console/SOAP: ".lbot <playerName> <role|spawn> [charName]"
-        bool const isRoleKeyword = (first == "spawn" || first == "team" || first == "creatures" || first == "tank" || first == "healer" || first == "dps" || first == "dismiss" || first == "self" || first == "rescue" || first == "level" || first == "autogear" || first == "aggro");
+        bool const isRoleKeyword = (first == "spawn" || first == "team" || first == "creatures" || first == "tank" || first == "healer" || first == "dps" || first == "dismiss" || first == "self" || first == "rescue" || first == "level" || first == "autogear" || first == "aggro" || first == "assist");
         if (!target && !first.empty() && !isRoleKeyword)
         {
             target = ObjectAccessor::FindPlayerByName(first);
@@ -577,6 +578,19 @@ public:
                 return false;
             }
             LegionBot_TankCommand(target, second, handler);
+            return true;
+        }
+
+        // ".lbot assist full|defend|chill" - how the bots join fights
+        if (first == "assist")
+        {
+            if (!target)
+            {
+                handler->SendSysMessage("|cffff4444LegionBot:|r this command requires a player.");
+                handler->SetSentErrorMessage(true);
+                return false;
+            }
+            LegionBot_AssistCommand(target, second, handler);
             return true;
         }
 
