@@ -8,9 +8,9 @@
 
 ## 🚀 Ready-to-run server pack (no compiling)
 
-Don't want to build from source? Download the **LegionBotAI Server Pack v1.1**:
+Don't want to build from source? Download the **LegionBotAI Server Pack v1.2**:
 
-- **GitHub:** https://github.com/psychochaingang/LrdPsychoChains-WOW-HUB/releases/tag/v1.1
+- **GitHub:** https://github.com/psychochaingang/LrdPsychoChains-WOW-HUB/releases/tag/v1.2
 - **Mirror:** https://archive.org/details/lrdpsychochains-legionbotai-server-pack
 
 It contains: prebuilt `worldserver.exe` (bot build) + `bnetserver.exe` + confs + DLLs, the base databases (auth/characters/hotfixes/world) + updates, the bot account + **8 ready-made bot characters** (4 Horde, 4 Alliance), the full bot source, and a `README-FIRST.txt` quick-start.

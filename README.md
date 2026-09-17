@@ -43,7 +43,7 @@
 | [**LegionBotAI**](projects/legionbotai/) | Real player-character bots for LegionCore 7.3.5 — tank/healer/DPS team, LFG dungeon finder integration, formations, loot, potions, party buffs, self-AI |
 | [WotLK Custom Scripts](projects/wotlk-custom/) | AzerothCore custom systems (party controller, custom scripts) |
 
-> **🤖 Want to test the Legion bots without compiling?** [**LegionBotAI Server Pack v1.1**](https://github.com/psychochaingang/LrdPsychoChains-WOW-HUB/releases/tag/v1.1) — prebuilt LegionCore 7.3.5 worldserver with the bot system compiled in, base databases, bot account + 8 ready-made bot characters and a quick-start guide. Mirror: [archive.org](https://archive.org/details/lrdpsychochains-legionbotai-server-pack).
+> **🤖 Want to test the Legion bots without compiling?** [**LegionBotAI Server Pack v1.2**](https://github.com/psychochaingang/LrdPsychoChains-WOW-HUB/releases/tag/v1.2) — prebuilt LegionCore 7.3.5 worldserver with the bot system compiled in, base databases, bot account + 8 ready-made bot characters and a quick-start guide. Mirror: [archive.org](https://archive.org/details/lrdpsychochains-legionbotai-server-pack).
 
 ## 📦 Data Files (dbc / maps / vmaps / mmaps)
 
