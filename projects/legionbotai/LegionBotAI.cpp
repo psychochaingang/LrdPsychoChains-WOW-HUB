@@ -205,6 +205,7 @@ float const LB_MAX_ENGAGE_DISTANCE = 30.0f;
         uint8 fixedLevel = 1;
         bool  playerTank = false;   // true = the PLAYER holds aggro (bots don't taunt/boost threat)
         uint8 assistMode = LB_ASSIST_FULL;
+        bool  holdPosition = false; // true = "stay": bots hold their position instead of following
         bool  loaded     = false;
     };
 
@@ -224,6 +225,7 @@ float const LB_MAX_ENGAGE_DISTANCE = 30.0f;
             "`fixed_level` TINYINT UNSIGNED NOT NULL DEFAULT 1,"
             "`player_tank` TINYINT UNSIGNED NOT NULL DEFAULT 0,"
             "`assist_mode` TINYINT UNSIGNED NOT NULL DEFAULT 0,"
+            "`hold_position` TINYINT UNSIGNED NOT NULL DEFAULT 0,"
             "PRIMARY KEY (`guid`)) ENGINE=InnoDB DEFAULT CHARSET=utf8");
         // Upgrade existing installs (columns added after the table was first created)
         CharacterDatabase.DirectExecute(
@@ -232,6 +234,9 @@ float const LB_MAX_ENGAGE_DISTANCE = 30.0f;
         CharacterDatabase.DirectExecute(
             "ALTER TABLE `character_legionbot_settings` ADD COLUMN IF NOT EXISTS "
             "`assist_mode` TINYINT UNSIGNED NOT NULL DEFAULT 0");
+        CharacterDatabase.DirectExecute(
+            "ALTER TABLE `character_legionbot_settings` ADD COLUMN IF NOT EXISTS "
+            "`hold_position` TINYINT UNSIGNED NOT NULL DEFAULT 0");
     }
 
     LegionBotSettings& GetLegionBotSettings(Player* owner)
@@ -242,7 +247,7 @@ float const LB_MAX_ENGAGE_DISTANCE = 30.0f;
             s.loaded = true;
             EnsureLegionBotSettingsTable();
             if (QueryResult r = CharacterDatabase.PQuery(
-                    "SELECT level_mode, fixed_level, player_tank, assist_mode FROM character_legionbot_settings WHERE guid = %u",
+                    "SELECT level_mode, fixed_level, player_tank, assist_mode, hold_position FROM character_legionbot_settings WHERE guid = %u",
                     owner->GetGUID().GetCounter()))
             {
                 Field* f = r->Fetch();
@@ -250,6 +255,7 @@ float const LB_MAX_ENGAGE_DISTANCE = 30.0f;
                 s.fixedLevel = f[1].GetUInt8();
                 s.playerTank = f[2].GetUInt8() != 0;
                 s.assistMode = f[3].GetUInt8();
+                s.holdPosition = f[4].GetUInt8() != 0;
                 if (s.levelMode > LB_LEVEL_FIXED)
                     s.levelMode = LB_LEVEL_SYNC;
                 if (s.fixedLevel < 1)
@@ -266,9 +272,9 @@ float const LB_MAX_ENGAGE_DISTANCE = 30.0f;
         LegionBotSettings const& s = GetLegionBotSettings(owner);
         EnsureLegionBotSettingsTable();
         CharacterDatabase.PExecute(
-            "INSERT INTO character_legionbot_settings (guid, level_mode, fixed_level, player_tank, assist_mode) VALUES (%u, %u, %u, %u, %u) "
-            "ON DUPLICATE KEY UPDATE level_mode = VALUES(level_mode), fixed_level = VALUES(fixed_level), player_tank = VALUES(player_tank), assist_mode = VALUES(assist_mode)",
-            owner->GetGUID().GetCounter(), uint32(s.levelMode), uint32(s.fixedLevel), uint32(s.playerTank ? 1 : 0), uint32(s.assistMode));
+            "INSERT INTO character_legionbot_settings (guid, level_mode, fixed_level, player_tank, assist_mode, hold_position) VALUES (%u, %u, %u, %u, %u, %u) "
+            "ON DUPLICATE KEY UPDATE level_mode = VALUES(level_mode), fixed_level = VALUES(fixed_level), player_tank = VALUES(player_tank), assist_mode = VALUES(assist_mode), hold_position = VALUES(hold_position)",
+            owner->GetGUID().GetCounter(), uint32(s.levelMode), uint32(s.fixedLevel), uint32(s.playerTank ? 1 : 0), uint32(s.assistMode), uint32(s.holdPosition ? 1 : 0));
     }
 
     uint8 GetLegionBotTargetLevel(Player* owner)
@@ -1013,8 +1019,8 @@ void LegionBot_DebugInfo(Player* owner, ChatHandler* handler)
     LegionBotSettings const& settings = GetLegionBotSettings(owner);
     char const* modeName = settings.levelMode == LB_LEVEL_MAX ? "max" : (settings.levelMode == LB_LEVEL_FIXED ? "fixed" : "sync");
     char const* assistName = settings.assistMode == LB_ASSIST_DEFEND ? "defend" : (settings.assistMode == LB_ASSIST_CHILL ? "chill" : "full");
-    handler->PSendSysMessage("|cff33ff99LegionBot:|r level |cffffff00%s|r (target %u) | assist |cffffff00%s|r | aggro |cffffff00%s|r | %u bot(s) online",
-        modeName, uint32(GetLegionBotTargetLevel(owner)), assistName, settings.playerTank ? "you" : "bot", uint32(bots.size()));
+    handler->PSendSysMessage("|cff33ff99LegionBot:|r level |cffffff00%s|r (target %u) | assist |cffffff00%s|r | aggro |cffffff00%s|r | movement |cffffff00%s|r | %u bot(s) online",
+        modeName, uint32(GetLegionBotTargetLevel(owner)), assistName, settings.playerTank ? "you" : "bot", settings.holdPosition ? "stay" : "follow", uint32(bots.size()));
 
     for (ObjectGuid botGuid : bots)
     {
@@ -1188,6 +1194,89 @@ void LegionBot_AssistCommand(Player* owner, std::string const& arg, ChatHandler*
     {
         handler->PSendSysMessage("|cff33ff99LegionBot:|r usage: .lbot assist full | defend | chill");
     }
+}
+
+void LegionBot_FollowCommand(Player* owner, std::string const& arg, ChatHandler* handler)
+{
+    if (!owner || !handler)
+        return;
+
+    LegionBotSettings& s = GetLegionBotSettings(owner);
+
+    if (arg == "stay")
+    {
+        s.holdPosition = true;
+        SaveLegionBotSettings(owner);
+        handler->PSendSysMessage("|cff33ff99LegionBot:|r bots will |cffffff00stay|r where they are (.lbot follow to resume).");
+    }
+    else
+    {
+        s.holdPosition = false;
+        SaveLegionBotSettings(owner);
+        handler->PSendSysMessage("|cff33ff99LegionBot:|r bots will |cffffff00follow|r you.");
+    }
+}
+
+void LegionBot_AttackCommand(Player* owner, ChatHandler* handler)
+{
+    if (!owner || !handler)
+        return;
+
+    Unit* target = owner->getVictim();
+    if (!target)
+        target = owner->getAttackerForHelper();
+
+    if (!target || !target->isAlive())
+    {
+        handler->PSendSysMessage("|cffff4444LegionBot:|r no target - select an enemy first.");
+        handler->SetSentErrorMessage(true);
+        return;
+    }
+
+    uint32 count = 0;
+    for (ObjectGuid botGuid : LegionBot_GetBotsOf(owner->GetGUID()))
+    {
+        Player* bot = ObjectAccessor::FindPlayer(botGuid);
+        if (!bot || !bot->IsInWorld() || bot->isDead())
+            continue;
+        if (!bot->IsValidAttackTarget(target))
+            continue;
+
+        // Engage immediately (a manual attack order skips the first-swing delay)
+        {
+            std::lock_guard<std::mutex> lock(g_legionBotsMutex);
+            g_legionBotTargetSince[bot->GetGUID()] = std::make_pair(target->GetGUID(), uint32(0));
+        }
+
+        bot->Attack(target, true);
+        bot->GetMotionMaster()->MoveChase(target);
+        ++count;
+    }
+
+    handler->PSendSysMessage("|cff33ff99LegionBot:|r attacking |cffffff00%s|r with %u bot(s).", target->GetName(), count);
+}
+
+void LegionBot_ComeCommand(Player* owner, ChatHandler* handler)
+{
+    if (!owner || !handler)
+        return;
+
+    uint32 count = 0;
+    for (ObjectGuid botGuid : LegionBot_GetBotsOf(owner->GetGUID()))
+    {
+        Player* bot = ObjectAccessor::FindPlayer(botGuid);
+        if (!bot || !bot->IsInWorld())
+            continue;
+        if (bot->GetMap() != owner->GetMap())
+            continue;
+
+        Position pos;
+        owner->GetPosition(&pos);
+        bot->NearTeleportTo(pos.m_positionX, pos.m_positionY, pos.m_positionZ, owner->GetOrientation());
+        ++count;
+    }
+
+    handler->PSendSysMessage("|cff33ff99LegionBot:|r %u bot(s) called to you.", count);
 }
 
 void LegionBot_Spawn(Player* owner, std::string const& charName, ChatHandler* handler, uint8 role = 255)
@@ -1755,7 +1844,8 @@ void LegionBot_OnPlayerUpdate(Player* player, uint32 /*diff*/)
         float zDiff = fabs(bot->GetPositionZ() - player->GetPositionZ());
 
         // If we're really far away or on a different floor/level, snap to the formation slot
-        if (dist > 80.0f || zDiff > 3.0f)
+        // (unless "stay" mode is active - the bots hold their position)
+        if (!settings.holdPosition && (dist > 80.0f || zDiff > 3.0f))
         {
             Position formPos = GetFormationPosition(player, role, slot, roleIndex);
             bot->NearTeleportTo(formPos.m_positionX, formPos.m_positionY, formPos.m_positionZ, player->GetOrientation());
@@ -1763,7 +1853,7 @@ void LegionBot_OnPlayerUpdate(Player* player, uint32 /*diff*/)
         else
         {
             // Nobody repositions while attacking; the healer keeps distance when idle
-            bool const canFollow = !bot->getVictim() && ((role == LB_ROLE_HEALER) || !bot->isInCombat());
+            bool const canFollow = !settings.holdPosition && !bot->getVictim() && ((role == LB_ROLE_HEALER) || !bot->isInCombat());
             if (canFollow)
             {
                 Position formPos = GetFormationPosition(player, role, slot, roleIndex);
@@ -1859,13 +1949,22 @@ void LegionBot_OnPlayerUpdate(Player* player, uint32 /*diff*/)
         Unit* target = nullptr;
         if (settings.assistMode == LB_ASSIST_CHILL)
         {
-            // chill: bots never attack - they follow, heal and buff only
-            target = nullptr;
+            // chill: bots never attack - follow/heal/buff only (an explicit
+            // ".lbot attack" order still works until that target dies)
+            Unit* ordered = bot->getVictim();
+            if (ordered && ordered->isAlive() && bot->IsValidAttackTarget(ordered))
+                target = ordered;
         }
         else if (settings.assistMode == LB_ASSIST_DEFEND)
         {
             // defend: only fight mobs that are attacking the owner
             target = player->getAttackerForHelper();
+            if (!target)
+            {
+                Unit* ordered = bot->getVictim();
+                if (ordered && ordered->isAlive() && bot->IsValidAttackTarget(ordered))
+                    target = ordered;
+            }
         }
         else if (role == LB_ROLE_TANK)
         {

@@ -41,6 +41,9 @@ void LegionBot_LevelCommand(Player* owner, std::string const& arg, ChatHandler* 
 void LegionBot_AutogearTeam(Player* owner, ChatHandler* handler);
 void LegionBot_TankCommand(Player* owner, std::string const& arg, ChatHandler* handler);
 void LegionBot_AssistCommand(Player* owner, std::string const& arg, ChatHandler* handler);
+void LegionBot_FollowCommand(Player* owner, std::string const& arg, ChatHandler* handler);
+void LegionBot_AttackCommand(Player* owner, ChatHandler* handler);
+void LegionBot_ComeCommand(Player* owner, ChatHandler* handler);
 
 namespace
 {
@@ -417,12 +420,12 @@ public:
     {
         static std::vector<ChatCommand> addCommandTable =
         {
-            { "playerbot", SEC_PLAYER, true, &HandlePlayerbotCommand, "LegionBotAI: team | spawn <name> | self | dismiss | info | level | autogear | aggro | assist | creatures" }
+            { "playerbot", SEC_PLAYER, true, &HandlePlayerbotCommand, "LegionBotAI: team | spawn <name> | self | dismiss | info | level | autogear | aggro | assist | follow | stay | attack | come | creatures" }
         };
 
         static std::vector<ChatCommand> CommandTable =
         {
-            { "lbot", SEC_PLAYER, true, &HandlePlayerbotCommand, "LegionBotAI: team | spawn <name> | self | dismiss | info | level | autogear | aggro | assist | creatures" },
+            { "lbot", SEC_PLAYER, true, &HandlePlayerbotCommand, "LegionBotAI: team | spawn <name> | self | dismiss | info | level | autogear | aggro | assist | follow | stay | attack | come | creatures" },
             { "add", SEC_PLAYER, true, nullptr, "", addCommandTable }
         };
 
@@ -460,7 +463,7 @@ public:
         }
 
         // Console/SOAP: ".lbot <playerName> <role|spawn> [charName]"
-        bool const isRoleKeyword = (first == "spawn" || first == "team" || first == "creatures" || first == "tank" || first == "healer" || first == "dps" || first == "dismiss" || first == "self" || first == "rescue" || first == "level" || first == "autogear" || first == "aggro" || first == "assist");
+        bool const isRoleKeyword = (first == "spawn" || first == "team" || first == "creatures" || first == "tank" || first == "healer" || first == "dps" || first == "dismiss" || first == "self" || first == "rescue" || first == "level" || first == "autogear" || first == "aggro" || first == "assist" || first == "follow" || first == "stay" || first == "attack" || first == "come");
         if (!target && !first.empty() && !isRoleKeyword)
         {
             target = ObjectAccessor::FindPlayerByName(first);
@@ -591,6 +594,45 @@ public:
                 return false;
             }
             LegionBot_AssistCommand(target, second, handler);
+            return true;
+        }
+
+        // ".lbot follow" / ".lbot stay" - follow the owner or hold position
+        if (first == "follow" || first == "stay")
+        {
+            if (!target)
+            {
+                handler->SendSysMessage("|cffff4444LegionBot:|r this command requires a player.");
+                handler->SetSentErrorMessage(true);
+                return false;
+            }
+            LegionBot_FollowCommand(target, first, handler);
+            return true;
+        }
+
+        // ".lbot attack" - order the whole team onto your current target
+        if (first == "attack")
+        {
+            if (!target)
+            {
+                handler->SendSysMessage("|cffff4444LegionBot:|r this command requires a player.");
+                handler->SetSentErrorMessage(true);
+                return false;
+            }
+            LegionBot_AttackCommand(target, handler);
+            return true;
+        }
+
+        // ".lbot come" - call the team to your position
+        if (first == "come")
+        {
+            if (!target)
+            {
+                handler->SendSysMessage("|cffff4444LegionBot:|r this command requires a player.");
+                handler->SetSentErrorMessage(true);
+                return false;
+            }
+            LegionBot_ComeCommand(target, handler);
             return true;
         }
 
