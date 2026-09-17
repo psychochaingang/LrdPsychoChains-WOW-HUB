@@ -39,6 +39,7 @@ void LegionBot_DebugInfo(Player* owner, ChatHandler* handler);
 bool LegionBot_ToggleSelfAI(Player* player);
 void LegionBot_LevelCommand(Player* owner, std::string const& arg, ChatHandler* handler);
 void LegionBot_AutogearTeam(Player* owner, ChatHandler* handler);
+void LegionBot_TankCommand(Player* owner, std::string const& arg, ChatHandler* handler);
 
 namespace
 {
@@ -415,12 +416,12 @@ public:
     {
         static std::vector<ChatCommand> addCommandTable =
         {
-            { "playerbot", SEC_PLAYER, true, &HandlePlayerbotCommand, "LegionBotAI: team | spawn <name> | self | dismiss | info | level | autogear | creatures" }
+            { "playerbot", SEC_PLAYER, true, &HandlePlayerbotCommand, "LegionBotAI: team | spawn <name> | self | dismiss | info | level | autogear | aggro | creatures" }
         };
 
         static std::vector<ChatCommand> CommandTable =
         {
-            { "lbot", SEC_PLAYER, true, &HandlePlayerbotCommand, "LegionBotAI: team | spawn <name> | self | dismiss | info | level | autogear | creatures" },
+            { "lbot", SEC_PLAYER, true, &HandlePlayerbotCommand, "LegionBotAI: team | spawn <name> | self | dismiss | info | level | autogear | aggro | creatures" },
             { "add", SEC_PLAYER, true, nullptr, "", addCommandTable }
         };
 
@@ -458,7 +459,7 @@ public:
         }
 
         // Console/SOAP: ".lbot <playerName> <role|spawn> [charName]"
-        bool const isRoleKeyword = (first == "spawn" || first == "team" || first == "creatures" || first == "tank" || first == "healer" || first == "dps" || first == "dismiss" || first == "self" || first == "rescue" || first == "level" || first == "autogear");
+        bool const isRoleKeyword = (first == "spawn" || first == "team" || first == "creatures" || first == "tank" || first == "healer" || first == "dps" || first == "dismiss" || first == "self" || first == "rescue" || first == "level" || first == "autogear" || first == "aggro");
         if (!target && !first.empty() && !isRoleKeyword)
         {
             target = ObjectAccessor::FindPlayerByName(first);
@@ -566,6 +567,19 @@ public:
             return true;
         }
 
+        // ".lbot aggro me|bot" - who holds aggro (player tank mode)
+        if (first == "aggro")
+        {
+            if (!target)
+            {
+                handler->SendSysMessage("|cffff4444LegionBot:|r this command requires a player.");
+                handler->SetSentErrorMessage(true);
+                return false;
+            }
+            LegionBot_TankCommand(target, second, handler);
+            return true;
+        }
+
         // ".lbot self" - toggle self-AI: the bot AI fights for you
         if (first == "self")
         {
@@ -607,17 +621,32 @@ public:
         // Role handling
         if (first == "team")
         {
-            // The real dungeon team: 4 playerbot characters with 7.3.5 meta classes
+            // The real dungeon team: 4 playerbot characters with 7.3.5 meta classes.
+            // The team is chosen by the owner's faction so Alliance characters get
+            // Alliance bots (and vice versa).
             if (target)
             {
                 DespawnCompanions(target);
                 LegionBot_DismissAll(target, nullptr);
             }
-            LegionBot_Spawn(target, "Bulwark", handler, 0);   // Blood DK tank
-            LegionBot_Spawn(target, "Lovley",  handler, 1);   // Holy Paladin healer
-            LegionBot_Spawn(target, "Ember",   handler, 2);   // Fury Warrior dps
-            LegionBot_Spawn(target, "Faith",   handler, 1);   // Holy Priest healer (heals only)
-            handler->PSendSysMessage("|cff33ff99Full playerbot dungeon team ready!|r (Blood DK tank, Paladin + Priest healers, Fury Warrior damage)");
+
+            bool const alliance = target && (target->GetTeamId() == TEAM_ALLIANCE);
+            if (alliance)
+            {
+                LegionBot_Spawn(target, "Aegis",     handler, 0);   // Human Blood DK tank
+                LegionBot_Spawn(target, "Seraphine", handler, 1);   // Draenei Holy Paladin healer
+                LegionBot_Spawn(target, "Rook",      handler, 2);   // Human Fury Warrior dps
+                LegionBot_Spawn(target, "Elowen",    handler, 1);   // Night Elf Holy Priest healer
+                handler->PSendSysMessage("|cff33ff99Alliance playerbot team ready!|r (Human DK tank, Draenei + Night Elf healers, Human Fury Warrior)");
+            }
+            else
+            {
+                LegionBot_Spawn(target, "Bulwark", handler, 0);   // Blood DK tank
+                LegionBot_Spawn(target, "Lovley",  handler, 1);   // Holy Paladin healer
+                LegionBot_Spawn(target, "Ember",   handler, 2);   // Fury Warrior dps
+                LegionBot_Spawn(target, "Faith",   handler, 1);   // Holy Priest healer (heals only)
+                handler->PSendSysMessage("|cff33ff99Full playerbot dungeon team ready!|r (Blood DK tank, Paladin + Priest healers, Fury Warrior damage)");
+            }
             return true;
         }
         if (first == "creatures")

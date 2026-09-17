@@ -187,6 +187,7 @@ std::map<uint32, std::vector<uint32>> g_legionBotGearCache;  // race*100000+clas
     {
         uint8 levelMode  = LB_LEVEL_SYNC;
         uint8 fixedLevel = 1;
+        bool  playerTank = false;   // true = the PLAYER holds aggro (bots don't taunt/boost threat)
         bool  loaded     = false;
     };
 
@@ -204,7 +205,12 @@ std::map<uint32, std::vector<uint32>> g_legionBotGearCache;  // race*100000+clas
             "`guid` INT UNSIGNED NOT NULL,"
             "`level_mode` TINYINT UNSIGNED NOT NULL DEFAULT 0,"
             "`fixed_level` TINYINT UNSIGNED NOT NULL DEFAULT 1,"
+            "`player_tank` TINYINT UNSIGNED NOT NULL DEFAULT 0,"
             "PRIMARY KEY (`guid`)) ENGINE=InnoDB DEFAULT CHARSET=utf8");
+        // Upgrade existing installs (table created before player_tank existed)
+        CharacterDatabase.DirectExecute(
+            "ALTER TABLE `character_legionbot_settings` ADD COLUMN IF NOT EXISTS "
+            "`player_tank` TINYINT UNSIGNED NOT NULL DEFAULT 0");
     }
 
     LegionBotSettings& GetLegionBotSettings(Player* owner)
@@ -215,12 +221,13 @@ std::map<uint32, std::vector<uint32>> g_legionBotGearCache;  // race*100000+clas
             s.loaded = true;
             EnsureLegionBotSettingsTable();
             if (QueryResult r = CharacterDatabase.PQuery(
-                    "SELECT level_mode, fixed_level FROM character_legionbot_settings WHERE guid = %u",
+                    "SELECT level_mode, fixed_level, player_tank FROM character_legionbot_settings WHERE guid = %u",
                     owner->GetGUID().GetCounter()))
             {
                 Field* f = r->Fetch();
                 s.levelMode = f[0].GetUInt8();
                 s.fixedLevel = f[1].GetUInt8();
+                s.playerTank = f[2].GetUInt8() != 0;
                 if (s.levelMode > LB_LEVEL_FIXED)
                     s.levelMode = LB_LEVEL_SYNC;
                 if (s.fixedLevel < 1)
@@ -235,9 +242,9 @@ std::map<uint32, std::vector<uint32>> g_legionBotGearCache;  // race*100000+clas
         LegionBotSettings const& s = GetLegionBotSettings(owner);
         EnsureLegionBotSettingsTable();
         CharacterDatabase.PExecute(
-            "INSERT INTO character_legionbot_settings (guid, level_mode, fixed_level) VALUES (%u, %u, %u) "
-            "ON DUPLICATE KEY UPDATE level_mode = VALUES(level_mode), fixed_level = VALUES(fixed_level)",
-            owner->GetGUID().GetCounter(), uint32(s.levelMode), uint32(s.fixedLevel));
+            "INSERT INTO character_legionbot_settings (guid, level_mode, fixed_level, player_tank) VALUES (%u, %u, %u, %u) "
+            "ON DUPLICATE KEY UPDATE level_mode = VALUES(level_mode), fixed_level = VALUES(fixed_level), player_tank = VALUES(player_tank)",
+            owner->GetGUID().GetCounter(), uint32(s.levelMode), uint32(s.fixedLevel), uint32(s.playerTank ? 1 : 0));
     }
 
     uint8 GetLegionBotTargetLevel(Player* owner)
@@ -261,88 +268,96 @@ std::map<uint32, std::vector<uint32>> g_legionBotGearCache;  // race*100000+clas
         return 3;
     }
 
-    // Best item for one slot at a level (0 = none found)
+    // Best item for one slot at a level, picked from the client DB2 item data
+    // (the core's real item source - world.item_template is not what the core loads)
     uint32 PickItemForSlot(Player* bot, uint8 level, uint8 itemClass, uint8 armorSubclass,
-                           uint32 weaponSubclassMask, uint8 invType, uint8 primaryStat,
+                           uint32 weaponSubclassMask, uint8 invType, uint8 /*primaryStat*/,
                            uint8 qualityCap, std::vector<uint32> const& exclude)
     {
-        std::string subclassClause;
-        if (itemClass == ITEM_CLASS_WEAPON)
+        uint32 bestEntry = 0;
+        uint16 bestIlvl = 0;
+        uint8  bestQuality = 0;
+
+        uint64 const classMask = (bot->getClass() > 0 && bot->getClass() < 64) ? (uint64(1) << (bot->getClass() - 1)) : 0;
+        uint64 const raceMask  = (bot->getRace() > 0 && bot->getRace() < 64) ? (uint64(1) << (bot->getRace() - 1)) : 0;
+
+        for (ItemSparseEntry const* sparse : sItemSparseStore)
         {
-            subclassClause = " AND subclass IN (";
-            bool first = true;
-            for (uint8 sc = 0; sc < 32; ++sc)
+            ItemEntry const* db2 = sItemStore.LookupEntry(sparse->ID);
+            if (!db2)
+                continue;
+
+            if (db2->ClassID != itemClass)
+                continue;
+            if (itemClass == ITEM_CLASS_WEAPON)
             {
-                if (weaponSubclassMask & (1u << sc))
-                {
-                    if (!first)
-                        subclassClause += ",";
-                    subclassClause += std::to_string(uint32(sc));
-                    first = false;
-                }
+                if (db2->SubclassID >= 32 || !(weaponSubclassMask & (1u << db2->SubclassID)))
+                    continue;
             }
-            subclassClause += ")";
-        }
-        else
-            subclassClause = " AND subclass = " + std::to_string(uint32(armorSubclass));
+            else if (db2->SubclassID != armorSubclass)
+                continue;
+            if (db2->InventoryType != invType)
+                continue;
 
-        std::string excludeClause;
-        if (!exclude.empty())
-        {
-            excludeClause = " AND entry NOT IN (";
-            for (size_t i = 0; i < exclude.size(); ++i)
+            if (sparse->RequiredLevel > level)
+                continue;
+            if (sparse->ItemLevel < 1)
+                continue;
+            if (sparse->OverallQualityID > qualityCap)
+                continue;
+            if (sparse->OverallQualityID == 7)          // heirloom quality
+                continue;
+            if (sparse->ScalingStatDistributionID != 0) // scaling items (heirlooms etc.)
+                continue;
+            if (sparse->MaxCount != 0)
+                continue;
+
+            if (sparse->AllowableClass && sparse->AllowableClass != uint16(-1) &&
+                !(uint64(sparse->AllowableClass) & classMask))
+                continue;
+            if (sparse->AllowableRace && sparse->AllowableRace != int64(-1) &&
+                !(uint64(sparse->AllowableRace) & raceMask))
+                continue;
+
+            if (std::find(exclude.begin(), exclude.end(), sparse->ID) != exclude.end())
+                continue;
+
+            if (sparse->ItemLevel > bestIlvl || (sparse->ItemLevel == bestIlvl && sparse->OverallQualityID > bestQuality))
             {
-                if (i)
-                    excludeClause += ",";
-                excludeClause += std::to_string(exclude[i]);
+                bestIlvl = sparse->ItemLevel;
+                bestQuality = sparse->OverallQualityID;
+                bestEntry = sparse->ID;
             }
-            excludeClause += ")";
         }
-
-        uint32 const classMask = (bot->getClass() < 32) ? (1u << (bot->getClass() - 1)) : 0;
-        uint32 const raceMask  = (bot->getRace() < 32) ? (1u << (bot->getRace() - 1)) : 0;
-        uint32 const ilvlCap   = uint32(level) * 3 + 30;
-
-        std::string query =
-            "SELECT entry FROM item_template WHERE class = " + std::to_string(uint32(itemClass)) + subclassClause +
-            " AND InventoryType = " + std::to_string(uint32(invType)) +
-            " AND RequiredLevel <= " + std::to_string(uint32(level)) +
-            " AND Quality <= " + std::to_string(uint32(qualityCap)) +
-            " AND ItemLevel > 0 AND ItemLevel <= " + std::to_string(ilvlCap) +
-            " AND ScalingStatDistribution = 0 AND maxcount = 0" + excludeClause +
-            " AND name NOT LIKE 'Deprecated%' AND name NOT LIKE 'QR %' AND name NOT LIKE 'DB%'"
-            " AND name NOT LIKE '% - PH%' AND name NOT LIKE '%(Test)%' AND name NOT LIKE 'Test %'" +
-            " AND (AllowableClass = -1 OR AllowableClass = 0 OR (AllowableClass & " + std::to_string(classMask) + ") <> 0)" +
-            " AND (AllowableRace = -1 OR AllowableRace = 0 OR (AllowableRace & " + std::to_string(raceMask) + ") <> 0)";
-
-        if (primaryStat)
-            query += " AND (stat_type1 = " + std::to_string(uint32(primaryStat)) +
-                     " OR stat_type2 = " + std::to_string(uint32(primaryStat)) +
-                     " OR stat_type3 = " + std::to_string(uint32(primaryStat)) +
-                     " OR stat_type4 = " + std::to_string(uint32(primaryStat)) +
-                     " OR stat_type5 = " + std::to_string(uint32(primaryStat)) + ")";
-
-        query += " ORDER BY ItemLevel DESC, Quality DESC LIMIT 1";
-
-        if (QueryResult r = WorldDatabase.Query(query.c_str()))
-            return r->Fetch()[0].GetUInt32();
-        return 0;
+        return bestEntry;
     }
 
-    // Basic starting items - exactly what a fresh character of this race/class gets
+    // Basic starting items - the exact starting outfit a fresh character gets
+    // (CharStartOutfit DB2, the same source the core uses in Player::Create)
     std::vector<uint32> GetStartingGear(Player* bot)
     {
         std::vector<uint32> items;
-        if (QueryResult r = WorldDatabase.PQuery(
-                "SELECT itemid FROM playercreateinfo_item WHERE (race = %u OR race = 0) AND (class = %u OR class = 0)",
-                uint32(bot->getRace()), uint32(bot->getClass())))
+        for (CharStartOutfitEntry const* entry : sCharStartOutfitStore)
         {
-            do
+            if (entry->RaceID == bot->getRace() && entry->ClassID == bot->getClass() && entry->SexID == bot->getGender())
             {
-                uint32 itemId = r->Fetch()[0].GetUInt32();
-                if (itemId)
+                for (int j = 0; j < MAX_OUTFIT_ITEMS; ++j)
+                {
+                    if (entry->ItemID[j] <= 0)
+                        continue;
+                    uint32 const itemId = uint32(entry->ItemID[j]);
+                    ItemTemplate const* proto = sObjectMgr->GetItemTemplate(itemId);
+                    if (!proto)
+                        continue;
+                    // gear only (skip bags, food, potions, ...)
+                    if (proto->GetClass() != ITEM_CLASS_ARMOR && proto->GetClass() != ITEM_CLASS_WEAPON)
+                        continue;
+                    if (proto->GetInventoryType() == 0)
+                        continue;
                     items.push_back(itemId);
-            } while (r->NextRow());
+                }
+                break;
+            }
         }
         return items;
     }
@@ -451,7 +466,14 @@ std::map<uint32, std::vector<uint32>> g_legionBotGearCache;  // race*100000+clas
         if (level >= maxLevel)
             return GetBotGear(bot->getClass());
         if (level <= 1)
-            return GetStartingGear(bot);
+        {
+            // Starting outfit, then fill any gaps with level-1 pickable gear
+            std::vector<uint32> items = GetStartingGear(bot);
+            for (uint32 itemId : PickGearForLevel(bot, level))
+                if (std::find(items.begin(), items.end(), itemId) == items.end())
+                    items.push_back(itemId);
+            return items;
+        }
         return PickGearForLevel(bot, level);
     }
 
@@ -465,6 +487,14 @@ std::map<uint32, std::vector<uint32>> g_legionBotGearCache;  // race*100000+clas
 
         for (uint32 itemId : GetBotGearForLevel(bot, level))
         {
+            // Safety: never pass an unknown item id to the inventory code
+            // (Item::CreateItem asserts on a missing template)
+            if (!sObjectMgr->GetItemTemplate(itemId))
+            {
+                TC_LOG_ERROR(LOG_FILTER_GENERAL, "PlayerBot: skipping unknown gear item %u for %s", itemId, bot->GetName());
+                continue;
+            }
+
             uint16 dest = 0;
             InventoryResult result = bot->CanEquipNewItem(NULL_SLOT, dest, itemId, false, true);
             if (FILE* f = fopen("bot_gear_debug.log", "a"))
@@ -490,11 +520,16 @@ std::map<uint32, std::vector<uint32>> g_legionBotGearCache;  // race*100000+clas
         if (!bot || !target || !target->isAlive())
             return;
 
-        SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellId);
-        if (!spellInfo)
-            return;
+    SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellId);
+    if (!spellInfo)
+        return;
 
-        uint32 now = getMSTime();
+    // Level gate: bots only use abilities their level would have learned
+    // (keeps them from firing endgame abilities while leveling)
+    if (spellInfo->BaseLevel > bot->getLevel())
+        return;
+
+    uint32 now = getMSTime();
 
         {
             std::lock_guard<std::mutex> lock(g_legionBotsMutex);
@@ -1039,6 +1074,31 @@ void LegionBot_AutogearTeam(Player* owner, ChatHandler* handler)
         handler->PSendSysMessage("|cffff4444LegionBot:|r no bots online - spawn the team first (.lbot team).");
 }
 
+void LegionBot_TankCommand(Player* owner, std::string const& arg, ChatHandler* handler)
+{
+    if (!owner || !handler)
+        return;
+
+    LegionBotSettings& s = GetLegionBotSettings(owner);
+
+    if (arg == "me" || arg == "player")
+    {
+        s.playerTank = true;
+        SaveLegionBotSettings(owner);
+        handler->PSendSysMessage("|cff33ff99LegionBot:|r tank mode = |cffffff00you|r - the bots will not taunt or boost threat. You hold aggro.");
+    }
+    else if (arg == "bot")
+    {
+        s.playerTank = false;
+        SaveLegionBotSettings(owner);
+        handler->PSendSysMessage("|cff33ff99LegionBot:|r tank mode = |cffffff00bot|r - the tank bot holds aggro (default).");
+    }
+    else
+    {
+        handler->PSendSysMessage("|cff33ff99LegionBot:|r usage: .lbot aggro me | bot");
+    }
+}
+
 void LegionBot_Spawn(Player* owner, std::string const& charName, ChatHandler* handler, uint8 role = 255)
 {
     // Sanitize the name (character names are alphanumeric only) to keep the query safe
@@ -1256,18 +1316,25 @@ void LegionBot_Spawn(Player* owner, std::string const& charName, ChatHandler* ha
     LearnBotSpells(bot);
     EquipBotGear(bot, spawnLevel);
 
-    // Dungeon consumables: potions in the backpack
-    bot->AddItem(LB_HEALTH_POTION_ID, 20);
-    if (bot->getPowerType() == POWER_MANA)
+    // Dungeon consumables: potions in the backpack (only if the items exist in this build)
+    if (sObjectMgr->GetItemTemplate(LB_HEALTH_POTION_ID))
+        bot->AddItem(LB_HEALTH_POTION_ID, 20);
+    if (bot->getPowerType() == POWER_MANA && sObjectMgr->GetItemTemplate(LB_MANA_POTION_ID))
         bot->AddItem(LB_MANA_POTION_ID, 20);
 
-    // Party buffs
+    // Party buffs (only if the bot's level could have learned them)
+    auto castBuffIfUsable = [&](uint32 spellId)
+    {
+        if (SpellInfo const* si = sSpellMgr->GetSpellInfo(spellId))
+            if (si->BaseLevel <= bot->getLevel())
+                bot->CastSpell(bot, spellId, true);
+    };
     switch (bot->getClass())
     {
-        case CLASS_WARRIOR:      bot->CastSpell(bot, 6673, true);  break;   // Battle Shout
-        case CLASS_PALADIN:      bot->CastSpell(bot, 20217, true); break;   // Blessing of Kings
-        case CLASS_PRIEST:       bot->CastSpell(bot, 21562, true); break;   // Power Word: Fortitude
-        case CLASS_DEATH_KNIGHT: bot->CastSpell(bot, 57330, true); break;   // Horn of Winter
+        case CLASS_WARRIOR:      castBuffIfUsable(6673);  break;   // Battle Shout
+        case CLASS_PALADIN:      castBuffIfUsable(20217); break;   // Blessing of Kings
+        case CLASS_PRIEST:       castBuffIfUsable(21562); break;   // Power Word: Fortitude
+        case CLASS_DEATH_KNIGHT: castBuffIfUsable(57330); break;   // Horn of Winter
         default: break;
     }
 
@@ -1522,6 +1589,8 @@ void LegionBot_OnPlayerUpdate(Player* player, uint32 /*diff*/)
         }
     }
 
+    LegionBotSettings& settings = GetLegionBotSettings(player);
+
     for (ObjectGuid botGuid : botGuids)
     {
         Player* bot = ObjectAccessor::FindPlayer(botGuid);
@@ -1707,16 +1776,26 @@ void LegionBot_OnPlayerUpdate(Player* player, uint32 /*diff*/)
         }
         else if ((role == LB_ROLE_DPS || (role == LB_ROLE_HEALER && healerCanDps)) && (player->isInCombat() || bot->isInCombat()))
         {
-            for (ObjectGuid otherGuid : botGuids)
+            // Player-tank mode: assist the owner's target directly
+            if (settings.playerTank)
             {
-                if (otherGuid == bot->GetGUID() || GetBotRole(otherGuid) != LB_ROLE_TANK)
-                    continue;
-                if (Player* tank = ObjectAccessor::FindPlayer(otherGuid))
-                    if (tank->IsInWorld() && tank->getVictim() && tank->getVictim()->isAlive())
-                    {
-                        target = tank->getVictim();
-                        break;
-                    }
+                target = player->getVictim();
+                if (!target)
+                    target = player->getAttackerForHelper();
+            }
+            if (!target)
+            {
+                for (ObjectGuid otherGuid : botGuids)
+                {
+                    if (otherGuid == bot->GetGUID() || GetBotRole(otherGuid) != LB_ROLE_TANK)
+                        continue;
+                    if (Player* tank = ObjectAccessor::FindPlayer(otherGuid))
+                        if (tank->IsInWorld() && tank->getVictim() && tank->getVictim()->isAlive())
+                        {
+                            target = tank->getVictim();
+                            break;
+                        }
+                }
             }
             if (!target)
                 target = player->getAttackerForHelper();
@@ -1725,7 +1804,8 @@ void LegionBot_OnPlayerUpdate(Player* player, uint32 /*diff*/)
         }
 
         // Tank: taunt mobs off any party member (works even before we have a target)
-        if (role == LB_ROLE_TANK)
+        // Skipped in player-tank mode - the owner wants to hold aggro.
+        if (role == LB_ROLE_TANK && !settings.playerTank)
         {
             Unit* tauntTarget = player->getAttackerForHelper();
             if (!tauntTarget)
@@ -1768,7 +1848,8 @@ void LegionBot_OnPlayerUpdate(Player* player, uint32 /*diff*/)
                 bot->GetMotionMaster()->MoveChase(target);
 
             // Tank: extra threat per tick so mobs stick to us
-            if (role == LB_ROLE_TANK)
+            // (disabled in player-tank mode so the owner keeps aggro)
+            if (role == LB_ROLE_TANK && !settings.playerTank)
                 target->AddThreat(bot, 120.0f);
 
                 // Remember the creature for looting once it dies

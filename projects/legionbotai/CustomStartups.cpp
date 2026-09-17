@@ -40,7 +40,12 @@ public:
             "`guid` INT UNSIGNED NOT NULL,"
             "`level_mode` TINYINT UNSIGNED NOT NULL DEFAULT 0,"
             "`fixed_level` TINYINT UNSIGNED NOT NULL DEFAULT 1,"
+            "`player_tank` TINYINT UNSIGNED NOT NULL DEFAULT 0,"
             "PRIMARY KEY (`guid`)) ENGINE=InnoDB DEFAULT CHARSET=utf8");
+        // Upgrade installs created before player_tank existed
+        CharacterDatabase.DirectExecute(
+            "ALTER TABLE `character_legionbot_settings` ADD COLUMN IF NOT EXISTS "
+            "`player_tank` TINYINT UNSIGNED NOT NULL DEFAULT 0");
 	}
 };
 

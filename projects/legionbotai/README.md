@@ -35,7 +35,7 @@ All commands work in-game **and** from console/SOAP.
 
 | Command | What it does |
 |---------|--------------|
-| `.lbot team` | Spawn the full 4-bot dungeon team |
+| `.lbot team` | Spawn the full 4-bot team (auto-picks Horde or Alliance bots by your faction) |
 | `.lbot spawn <characterName>` | Spawn a specific character as a bot |
 | `.lbot dismiss` | Dismiss all your bots |
 | `.lbot info` | Diagnostic: mode, level, role, HP, combat, victim, gear, last cast |
@@ -43,21 +43,32 @@ All commands work in-game **and** from console/SOAP.
 | `.lbot level max` | Set the whole team to max level |
 | `.lbot level <1-110>` | Set the whole team to a fixed level |
 | `.lbot autogear` | Re-equip the team with gear that fits their level |
+| `.lbot aggro me` | YOU hold aggro - bots never taunt or boost threat (play as the tank) |
+| `.lbot aggro bot` | The tank bot holds aggro (default) |
 | `.lbot self` | Toggle self-AI (the bot AI plays your character) |
 | `.lbot rescue` | Revive + teleport home (unstuck) |
 | `.lbot creatures` | Spawn the NPC creature companion team (older system) |
 
 **Console/SOAP form:** `.lbot <playerName> <command>` — e.g. `.lbot MyChar team`
 
-### The default team
+### The default teams
+**Horde**
 | Bot | Class | Role |
 |-----|-------|------|
-| **Bulwark** | Blood Death Knight | Tank |
-| **Lovley** | Holy Paladin | Healer (DPS when free) |
-| **Ember** | Fury Warrior | DPS |
-| **Faith** | Holy Priest | Healer (DPS when free) |
+| **Bulwark** | Blood Death Knight (Goblin) | Tank |
+| **Lovley** | Holy Paladin (Blood Elf) | Healer (DPS when free) |
+| **Ember** | Fury Warrior (Undead) | DPS |
+| **Faith** | Holy Priest (Undead) | Healer (DPS when free) |
 
-*(Character names/classes are configurable in `LegionBotMgr.cpp` — the team command spawns whatever characters you list.)*
+**Alliance**
+| Bot | Class | Role |
+|-----|-------|------|
+| **Aegis** | Blood Death Knight (Human) | Tank |
+| **Seraphine** | Holy Paladin (Draenei) | Healer (DPS when free) |
+| **Rook** | Fury Warrior (Human) | DPS |
+| **Elowen** | Holy Priest (Night Elf) | Healer (DPS when free) |
+
+*(Character names/classes are configurable in `LegionBotMgr.cpp` — the team command spawns whatever characters you list for each faction.)*
 
 ---
 
@@ -65,16 +76,19 @@ All commands work in-game **and** from console/SOAP.
 
 Bots behave like real characters that level alongside you:
 
-- **`sync` mode (default):** a level-1 character gets **level-1 bots** with basic starting gear.
-  They level up with you and re-equip automatically - the gear follows a natural quality curve
-  (white → green → blue as you level) picked from the item database for their class
-  (cloth/leather/plate, correct weapon type, primary stat).
-- **`max` mode:** `.lbot level max` sets the team to max level with the endgame set
-  (Mists of Pandaria crafted, ilvl 384 - works well on 7.3.5).
+- **`sync` mode (default):** a level-1 character gets **level-1 bots** wearing the **same starting
+  outfit a fresh character gets** (from the game's CharStartOutfit data), then gear upgrades as they
+  level - picked from the game's real item data (class-appropriate armor, weapons and quality curve:
+  white → green → blue).
+- **Ability gating:** bots only use abilities their level would have learned - no endgame spells
+  while leveling (keeps them from trivializing low-level content).
+- **`max` mode:** `.lbot level max` sets the team to max level with the endgame set.
 - **fixed mode:** `.lbot level <n>` pins the team at a specific level.
 - **`.lbot autogear`** re-equips the team on demand at their current level.
-- The chosen mode is **saved per character** (table `character_legionbot_settings` in the
-  characters DB, created automatically) and survives restarts.
+- **`.lbot aggro me|bot`** - who holds aggro: `me` lets you tank (bots never taunt or boost threat),
+  `bot` is the default (the tank bot holds aggro).
+- The chosen settings are **saved per character** (table `character_legionbot_settings` in the
+  characters DB, created automatically) and survive restarts.
 - Gear cache + level sync run cheaply in the background (2s tick, no DB spam).
 
 **Recommended:** create the bot characters at **level 1** in the SQL below - the level mode
@@ -134,10 +148,29 @@ VALUES (900000, 1, 1637, 1629.36, -4373.63, 31.2);
 ```
 
 **Requirements:**
-- A dedicated account (e.g. `BOT@BOT`) — bots log in on it
+- A dedicated account (e.g. `BOT@BOT`) - bots log in on it
 - Unique guid (900000+ recommended)
 - **`character_homebind` row is mandatory** (login fails without it)
 - `specialization` set to the spec ID (Blood=250, Holy Paladin=65, Fury=72, Holy Priest=257)
+
+**Alliance team example** (Human DK / Draenei Paladin / Human Warrior / Night Elf Priest, Stormwind homebind):
+
+```sql
+INSERT INTO characters
+  (guid, account, name, race, class, gender, level, map, position_x, position_y, position_z, orientation,
+   taximask, online, specialization, currentpetnumber, petslot)
+VALUES
+  (900010, 3, 'Aegis',     1,  6, 0, 1, 0, -8949.95, -132.493, 83.5312, 0, '', 0, 250, 0, 0),
+  (900011, 3, 'Seraphine', 11, 2, 1, 1, 0, -8949.95, -132.493, 83.5312, 0, '', 0,  65, 0, 0),
+  (900012, 3, 'Rook',      1,  1, 0, 1, 0, -8949.95, -132.493, 83.5312, 0, '', 0,  72, 0, 0),
+  (900013, 3, 'Elowen',    4,  5, 1, 1, 0, -8949.95, -132.493, 83.5312, 0, '', 0, 257, 0, 0);
+
+INSERT INTO character_homebind (guid, mapId, zoneId, posX, posY, posZ) VALUES
+  (900010, 0, 1519, -8949.95, -132.493, 83.5312),
+  (900011, 0, 1519, -8949.95, -132.493, 83.5312),
+  (900012, 0, 1519, -8949.95, -132.493, 83.5312),
+  (900013, 0, 1519, -8949.95, -132.493, 83.5312);
+```
 
 ---
 
