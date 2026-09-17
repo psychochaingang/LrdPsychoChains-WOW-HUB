@@ -45,7 +45,7 @@ All commands work in-game **and** from console/SOAP.
 | `.lbot autogear` | Re-equip the team with gear that fits their level |
 | `.lbot assist full` | Bots fight everything you fight (default) |
 | `.lbot assist defend` | Bots only fight mobs that attack you |
-| `.lbot assist chill` | Bots never start fights (follow/heal/buff only) |
+| `.lbot assist chill` | Bots never start fights (follow/heal/buff only - they still fight back if attacked) |
 | `.lbot follow` | Bots follow you (default movement mode) |
 | `.lbot stay` | Bots hold their position where they are (combat still works) |
 | `.lbot attack` | Order the whole team onto YOUR current target (works in any assist mode) |
