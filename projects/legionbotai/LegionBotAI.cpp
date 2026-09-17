@@ -1182,13 +1182,13 @@ void LegionBot_AssistCommand(Player* owner, std::string const& arg, ChatHandler*
     {
         s.assistMode = LB_ASSIST_DEFEND;
         SaveLegionBotSettings(owner);
-        handler->PSendSysMessage("|cff33ff99LegionBot:|r assist = |cffffff00defend|r - bots only fight mobs that attack you.");
+        handler->PSendSysMessage("|cff33ff99LegionBot:|r assist = |cffffff00defend|r - bots only fight mobs that attack you (or them).");
     }
     else if (arg == "chill")
     {
         s.assistMode = LB_ASSIST_CHILL;
         SaveLegionBotSettings(owner);
-        handler->PSendSysMessage("|cff33ff99LegionBot:|r assist = |cffffff00chill|r - bots never attack (follow, heal, buff only).");
+        handler->PSendSysMessage("|cff33ff99LegionBot:|r assist = |cffffff00chill|r - bots never start fights (follow, heal, buff only - they still fight back if attacked).");
     }
     else
     {
@@ -2003,6 +2003,15 @@ void LegionBot_OnPlayerUpdate(Player* player, uint32 /*diff*/)
                 target = player->getVictim();
         }
 
+        // Self-defense: if a mob is attacking the bot directly, fight it back.
+        // Works in every assist mode - a bot being beaten on should never just stand there.
+        if (!target)
+        {
+            Unit* attacker = bot->getAttackerForHelper();
+            if (attacker && attacker->isAlive() && bot->IsValidAttackTarget(attacker))
+                target = attacker;
+        }
+
         // Tank: taunt mobs off any party member (works even before we have a target)
         // Skipped in player-tank mode - the owner wants to hold aggro.
         if (role == LB_ROLE_TANK && !settings.playerTank)
@@ -2040,7 +2049,7 @@ void LegionBot_OnPlayerUpdate(Player* player, uint32 /*diff*/)
         }
 
         if (target && target->isAlive() && bot->IsValidAttackTarget(target) &&
-            player->GetDistance(target) <= LB_MAX_ENGAGE_DISTANCE)
+            bot->GetDistance(target) <= LB_MAX_ENGAGE_DISTANCE)
         {
             // Give the owner the first swing: wait briefly after picking a new target
             uint32 const nowMs = getMSTime();
