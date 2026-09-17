@@ -292,6 +292,31 @@ float const LB_MAX_ENGAGE_DISTANCE = 30.0f;
         return 3;
     }
 
+    // Hard quality ceiling (fallbacks may not exceed this while leveling)
+    uint8 QualityMaxForLevel(uint8 level)
+    {
+        if (level < 20)
+            return 2;   // greens only
+        if (level < 60)
+            return 3;   // up to blues
+        return 4;
+    }
+
+    // Item-level ceiling by character level - stops level-1 bots from wearing
+    // Legion endgame items that happen to have RequiredLevel 1.
+    uint16 IlvlCapForLevel(uint8 level)
+    {
+        if (level <= 60)
+            return uint16(uint32(level) * 2 + 6);   // 1 -> 8, 10 -> 26, 60 -> 126
+        if (level <= 80)
+            return uint16(uint32(level) * 3);       // 80 -> 240
+        if (level <= 90)
+            return uint16(uint32(level) * 5);       // 90 -> 450
+        if (level <= 100)
+            return uint16(uint32(level) * 8);       // 100 -> 800
+        return 2000;
+    }
+
     // Best item for one slot at a level, picked from the client DB2 item data
     // (the core's real item source - world.item_template is not what the core loads)
     uint32 PickItemForSlot(Player* bot, uint8 level, uint8 itemClass, uint8 armorSubclass,
@@ -320,12 +345,12 @@ float const LB_MAX_ENGAGE_DISTANCE = 30.0f;
             }
             else if (db2->SubclassID != armorSubclass)
                 continue;
-            if (db2->InventoryType != invType)
+            if (invType != 0 && db2->InventoryType != invType)
                 continue;
 
             if (sparse->RequiredLevel > level)
                 continue;
-            if (sparse->ItemLevel < 1)
+            if (sparse->ItemLevel < 1 || sparse->ItemLevel > IlvlCapForLevel(level))
                 continue;
             if (sparse->OverallQualityID > qualityCap)
                 continue;
@@ -431,6 +456,7 @@ float const LB_MAX_ENGAGE_DISTANCE = 30.0f;
         }
 
         uint8 const cap = QualityCapForLevel(level);
+        uint8 const maxQuality = QualityMaxForLevel(level);
         std::vector<uint32> items;
 
         // Armor slots: head, neck, shoulders, chest, waist, legs, feet, wrist, hands, back, ring, trinket
@@ -438,7 +464,7 @@ float const LB_MAX_ENGAGE_DISTANCE = 30.0f;
         for (uint8 invType : armorInvTypes)
         {
             uint32 entry = 0;
-            for (uint8 c = cap; c <= 4 && !entry; ++c)
+            for (uint8 c = cap; c <= maxQuality && !entry; ++c)
             {
                 entry = PickItemForSlot(bot, level, ITEM_CLASS_ARMOR, armorSubclass, 0, invType, primaryStat, c, items);
                 if (!entry)
@@ -453,7 +479,7 @@ float const LB_MAX_ENGAGE_DISTANCE = 30.0f;
         for (uint8 invType : extraInvTypes)
         {
             uint32 entry = 0;
-            for (uint8 c = cap; c <= 4 && !entry; ++c)
+            for (uint8 c = cap; c <= maxQuality && !entry; ++c)
                 entry = PickItemForSlot(bot, level, ITEM_CLASS_ARMOR, armorSubclass, 0, invType, primaryStat, c, items);
             if (entry)
                 items.push_back(entry);
@@ -461,11 +487,20 @@ float const LB_MAX_ENGAGE_DISTANCE = 30.0f;
 
         // Weapon (falls back to no primary-stat filter if nothing matches)
         uint32 weapon = 0;
-        for (uint8 c = cap; c <= 4 && !weapon; ++c)
+        for (uint8 c = cap; c <= maxQuality && !weapon; ++c)
         {
             weapon = PickItemForSlot(bot, level, ITEM_CLASS_WEAPON, 0, weaponMask, weaponInvType, primaryStat, c, items);
             if (!weapon)
                 weapon = PickItemForSlot(bot, level, ITEM_CLASS_WEAPON, 0, weaponMask, weaponInvType, 0, c, items);
+        }
+        // Last resort: any melee weapon the class can use (e.g. starter 1H weapons
+        // when the preferred 2H type has nothing at this level)
+        if (!weapon)
+        {
+            uint32 const anyMeleeMask = (1u << 0) | (1u << 1) | (1u << 4) | (1u << 5) | (1u << 6) |
+                                        (1u << 7) | (1u << 8) | (1u << 10) | (1u << 13) | (1u << 15);
+            for (uint8 c = cap; c <= 4 && !weapon; ++c)
+                weapon = PickItemForSlot(bot, level, ITEM_CLASS_WEAPON, 0, anyMeleeMask, 0, 0, c, items);
         }
         if (weapon)
             items.push_back(weapon);
@@ -473,7 +508,7 @@ float const LB_MAX_ENGAGE_DISTANCE = 30.0f;
         if (useShield)
         {
             uint32 shield = 0;
-            for (uint8 c = cap; c <= 4 && !shield; ++c)
+            for (uint8 c = cap; c <= maxQuality && !shield; ++c)
                 shield = PickItemForSlot(bot, level, ITEM_CLASS_ARMOR, ITEM_SUBCLASS_ARMOR_SHIELD, 0, 14, 0, c, items);
             if (shield)
                 items.push_back(shield);
