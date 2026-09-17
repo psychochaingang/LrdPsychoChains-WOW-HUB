@@ -198,7 +198,8 @@ std::map<uint32, std::vector<uint32>> g_legionBotGearCache;  // race*100000+clas
         if (created)
             return;
         created = true;
-        CharacterDatabase.Execute(
+        // DirectExecute = synchronous: the table must exist before the first SELECT below
+        CharacterDatabase.DirectExecute(
             "CREATE TABLE IF NOT EXISTS `character_legionbot_settings` ("
             "`guid` INT UNSIGNED NOT NULL,"
             "`level_mode` TINYINT UNSIGNED NOT NULL DEFAULT 0,"

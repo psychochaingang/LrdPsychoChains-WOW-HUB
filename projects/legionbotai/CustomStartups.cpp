@@ -1,5 +1,6 @@
 #include "Config.h"
 #include "Chat.h"
+#include "DatabaseEnv.h"
 #include "Log.h"
 #include "ScriptMgr.h"
 
@@ -32,7 +33,14 @@ public:
 	// run always when worldserver has loaded
 	void OnStartup() override
 	{
-        //TC_LOG_INFO(LOG_FILTER_WORLDSERVER, "LegionCore loaded...");
+        // LegionBotAI per-character settings (level sync + autogear modes).
+        // Created here so it exists before any player can use the bots.
+        CharacterDatabase.DirectExecute(
+            "CREATE TABLE IF NOT EXISTS `character_legionbot_settings` ("
+            "`guid` INT UNSIGNED NOT NULL,"
+            "`level_mode` TINYINT UNSIGNED NOT NULL DEFAULT 0,"
+            "`fixed_level` TINYINT UNSIGNED NOT NULL DEFAULT 1,"
+            "PRIMARY KEY (`guid`)) ENGINE=InnoDB DEFAULT CHARSET=utf8");
 	}
 };
 
