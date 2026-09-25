@@ -19,6 +19,7 @@
 | Know where every file goes | [sheets/PLACEMENT.md](sheets/PLACEMENT.md) |
 | See the master file list | [sheets/MANIFEST.md](sheets/MANIFEST.md) |
 | Verify a download | [sheets/CHECKSUMS.txt](sheets/CHECKSUMS.txt) |
+| Launch the game (12.1 + TrinityCore) | [MidnightCore Launcher](docs/10-launcher.md) |
 
 ## 🎮 Game Clients (we provide guides + links + hashes)
 
@@ -44,6 +45,14 @@
 | [WotLK Custom Scripts](projects/wotlk-custom/) | AzerothCore custom systems (party controller, custom scripts) |
 
 > **🤖 Want to test the Legion bots without compiling?** [**LegionBotAI Server Pack v1.2**](https://github.com/psychochaingang/LrdPsychoChains-WOW-HUB/releases/tag/v1.2) — prebuilt LegionCore 7.3.5 worldserver with the bot system compiled in, base databases, bot account + 8 ready-made bot characters and a quick-start guide. Mirror: [archive.org](https://archive.org/details/lrdpsychochains-legionbotai-server-pack).
+
+## 🕹 Game Launcher (WoW 12.1 + TrinityCore)
+
+| Guide | What it covers |
+|-------|----------------|
+| [MidnightCore Launcher](docs/10-launcher.md) | All-in-one desktop launcher for a self-hosted WoW 12.1 (build 69933) + TrinityCore 12.1.0 server - starts MariaDB/servers hidden, patches the Arxan-protected client, live loading timer, multi-box safe |
+
+> **🕹 Download:** [**MidnightCore Launcher 0.1.0-preview**](https://github.com/psychochaingang/LrdPsychoChains-WOW-HUB/releases/tag/launcher-v0.1.0-preview) - no game files included; bring your own licensed client and private server.
 
 ## 📦 Data Files (dbc / maps / vmaps / mmaps)
 
