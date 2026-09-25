@@ -24,7 +24,7 @@
 
 Also included: Settings (client folder + portal), Verify client, Logs, Game folder, CLI (`cli\mcml.exe`).
 
-**Menu extras:** background music (volume slider + on/off; starts on PLAY, stops and minimizes the launcher once the game loads), a **MidnightBotAI status card** (green/red dot + ON/OFF switch) with a per-launch "enable MidnightBotAI?" Yes/No prompt, a **Stop servers** button (worldserver -> bnetserver -> MariaDB), a clean-slate server stop when the launcher opens, and a cold start that holds 60 s then waits for the world port so the realm list is ready when the launcher fades.
+**Menu extras:** background music (volume slider + on/off; starts on PLAY, keeps playing while the launcher minimizes once the game loads), a **MidnightBotAI status card** (green/red dot + ON/OFF switch) with a per-launch "enable MidnightBotAI?" Yes/No prompt, a **Stop servers** button (worldserver -> bnetserver -> MariaDB), a clean-slate server stop when the launcher opens, and a cold start that holds 60 s then waits for the world port so the realm list is ready when the launcher fades.
 
 ## Why MidnightCore (instead of another launcher?)
 
@@ -60,7 +60,7 @@ Also included: Settings (client folder + portal), Verify client, Logs, Game fold
 | Check | Expected |
 |-------|----------|
 | Engine SHA-256 | `B5359A972F760905F572AAFC4066D945F6382CEC2A521D555DD58D2861EF7C1C` |
-| Zip SHA-256 | `DC45ED1D07E1BBBFBE7656E87C74964843C8D4F8D9732E14647BC02C455F1959` |
+| Zip SHA-256 | `C5879E85009EC2B1D591B5FE92C43D1C97454E61B7331E4F6953487A51E3B344` |
 | Client build | 12.1.0.69933 (`mcml --dry-run`) |
 | Ports | 3306 / 2119 / 9085 |
 
