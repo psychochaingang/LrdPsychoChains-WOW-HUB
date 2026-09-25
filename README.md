@@ -50,7 +50,7 @@
 
 | Guide | What it covers |
 |-------|----------------|
-| [MidnightCore Launcher](docs/10-launcher.md) | All-in-one desktop launcher for a self-hosted WoW 12.1 (build 69933) + TrinityCore 12.1.0 server - starts MariaDB/servers hidden, patches the Arxan-protected client, live loading timer, multi-box safe |
+| [MidnightCore Launcher](docs/10-launcher.md) | All-in-one desktop launcher for a self-hosted WoW 12.1 (build 69933) + TrinityCore 12.1.0 server - starts MariaDB/servers hidden, patches the Arxan-protected client, live loading timer, multi-box safe. **Coming: exclusive UltraLegionBotAI integration (our launcher only).** |
 
 > **🕹 Download:** [**MidnightCore Launcher 0.1.0-preview**](https://github.com/psychochaingang/LrdPsychoChains-WOW-HUB/releases/tag/launcher-v0.1.0-preview) - no game files included; bring your own licensed client and private server.
 
