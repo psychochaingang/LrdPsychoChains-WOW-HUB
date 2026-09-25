@@ -28,7 +28,7 @@ Also included: Settings (client folder + portal), Verify client, Logs, Game fold
 
 - **Built for this stack** - WoW 12.1 (build 69933) + TrinityCore 12.1.0 + the LrdPsychoChains
   layout: it knows where your client, server stack and MariaDB live and starts them for you.
-- **UltraLegionBotAI is coming - and it will only work with this launcher.** Our next-generation
+- **MidnightBotAI is coming - and it will only work with this launcher.** Our next-generation
   playerbot AI integration is exclusive to MidnightCore Launcher; other launchers will not run it.
 - **All-in-one** - database + servers start hidden, the Arxan-protected client is patched through
   the bundled engine, a live timer shows the load, then the launcher fades into the login screen.
