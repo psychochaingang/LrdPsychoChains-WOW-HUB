@@ -82,9 +82,18 @@ Read [Legal & Hosting](01-legal-and-hosting.md) before sharing anything.
   (`mcml --native`) and is not used by default.
   - Built/tested on Windows with the stack above; other layouts work via Settings + env vars.
 
+  ## Downloads (choose one or both)
+
+  | Option | File | For whom |
+  |--------|------|----------|
+  | 1 - Launcher (recommended) | `LrdPsychoChains-MidnightCore-Launcher-0.1.0.zip` | Everyone who wants to play on their own server |
+  | 2 - Bot module (optional) | `LrdPsychoChains-MidnightBotAI-Server-Module-4.8.zip` | Server owners who want an AI party (see `projects/midnightbotai/`) |
+
+  Bot module SHA-256: `90A9ED8477F05E9930774FC3DFEAE481B3B60C4C076066C9A83C75674B1D343A`
+
   ## Updates
 
-  - 2026-09-27 - Launcher 0.1.0 refresh: on a cold start the launcher now waits up to five
-    minutes for the world service to finish loading before launching the game (previously it
-    gave up after a few seconds and the game could open before the realm was reachable).
-    New zip hash above.
+  - 2026-09-27 - Two download options on the release: the launcher and the optional
+    MidnightBotAI server module. The launcher cold start now waits up to five minutes for the
+    world service to finish loading before launching the game (previously it gave up after a
+    few seconds and the game could open before the realm was reachable). New zip hash above.
