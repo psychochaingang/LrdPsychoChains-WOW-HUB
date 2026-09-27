@@ -49,18 +49,25 @@
 
 | Project | Description |
 |---------|-------------|
-| [**LegionBotAI**](projects/legionbotai/) | Real player-character bots for LegionCore 7.3.5 — tank/healer/DPS team, LFG dungeon finder integration, formations, loot, potions, party buffs, self-AI |
+| [**LegionBotAI**](projects/legionbotai/) | **v1.0** — Real player-character bots for LegionCore 7.3.5: tank/healer/DPS team, LFG dungeon finder integration, formations, loot, potions, party buffs, self-AI |
+| [**MidnightBotAI**](projects/midnightbotai/) | **v4.8** — Real player-character bots for TrinityCore 12.1: tank/healer/damage team, level sync, auto gear + talents, line-of-sight recovery, spacing, loot rules, in-game stats meter. Source + plain-language changelog |
+| [**MidnightCore Launcher**](docs/10-launcher.md) | **v0.1.0** — all-in-one launcher for the self-hosted WoW 12.1 + TrinityCore 12.1.0 stack (starts database/servers, patches the client, launches the game) |
 | [WotLK Custom Scripts](projects/wotlk-custom/) | AzerothCore custom systems (party controller, custom scripts) |
 
 > **🤖 Want to test the Legion bots without compiling?** [**LegionBotAI Server Pack v1.2**](https://github.com/psychochaingang/LrdPsychoChains-WOW-HUB/releases/tag/v1.2) — prebuilt LegionCore 7.3.5 worldserver with the bot system compiled in, base databases, bot account + 8 ready-made bot characters and a quick-start guide. Mirror: [archive.org](https://archive.org/details/lrdpsychochains-legionbotai-server-pack).
 
-## 🕹 Game Launcher (WoW 12.1 + TrinityCore)
+## 🕹 WoW 12.1 Stack (MidnightCore — Launcher + Bots)
 
-| Guide | What it covers |
-|-------|----------------|
-| [MidnightCore Launcher](docs/10-launcher.md) | All-in-one desktop launcher for a self-hosted WoW 12.1 (build 69933) + TrinityCore 12.1.0 server - starts MariaDB/servers hidden, patches the Arxan-protected client, live loading timer, multi-box safe. **Coming: exclusive MidnightBotAI integration (our launcher only).** |
+| App | Version | Status | Guide / Download |
+|-----|---------|--------|------------------|
+| **MidnightCore Launcher** | 0.1.0 | ✅ tested | [guide](docs/10-launcher.md) · [download](https://github.com/psychochaingang/LrdPsychoChains-WOW-HUB/releases/tag/launcher-v0.1.0-preview) |
+| **MidnightBotAI** (server module, optional) | 4.8 | ✅ tested | [project](projects/midnightbotai/) · [download](https://github.com/psychochaingang/LrdPsychoChains-WOW-HUB/releases/tag/launcher-v0.1.0-preview) |
+| Client build | 12.1.0.69933 | ✅ tested | bring your own licensed client |
+| Server core | TrinityCore 12.1.0 | ✅ tested | self-hosted |
 
-> **🕹 Download:** [**MidnightCore Launcher 0.1.0-preview**](https://github.com/psychochaingang/LrdPsychoChains-WOW-HUB/releases/tag/launcher-v0.1.0-preview) - no game files included; bring your own licensed client and private server.
+The launcher starts MariaDB and both servers by itself, waits until the world is ready (cold start can take a few minutes), applies the usual client patch, opens the game and shows a live loading timer with an exclusive MidnightBotAI status card.
+
+> **🕹 Download:** both files (launcher + optional bot module) live on the [release page](https://github.com/psychochaingang/LrdPsychoChains-WOW-HUB/releases/tag/launcher-v0.1.0-preview) — no game files included; bring your own licensed client and private server.
 
 ## 📦 Data Files (dbc / maps / vmaps / mmaps)
 

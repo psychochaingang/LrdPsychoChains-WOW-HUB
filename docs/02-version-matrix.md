@@ -33,6 +33,7 @@ A WoW installation is identified by **expansion + version + build**:
 | Wrath of the Lich King | 3.3.5a | **12340** | 32-bit | ChromieCraft zip | **AzerothCore** + mod-playerbots | ✅ tested |
 | Legion | 7.3.5 | **26972** | 64-bit | RAR parts (mislabeled "26792"!) | **LegionCore** + LegionBotAI | ✅ tested |
 | Legion (old patched exes) | 7.3.5 | 26124 / 26365 | 64-bit | Wow_Exes.zip | older LegionCore builds | archive |
+| **WoW 12.1 (MidnightCore)** | 12.1.0 | **69933** | 64-bit | launcher-patched client (bring your own) | **TrinityCore 12.1.0** + MidnightBotAI 4.8 | ✅ tested |
 
 ### Server data builds
 
