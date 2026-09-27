@@ -10,6 +10,8 @@
 
 > **What this hub is:** a complete, honest, tested guide collection for setting up WoW game clients (Vanilla → Legion) and private servers (AzerothCore 3.3.5a, LegionCore 7.3.5), plus our custom **LegionBotAI** playerbot system.
 >
+> **Who makes it:** a dedicated fan, for the community. Free, non-commercial, no paywalls - and not affiliated with Blizzard. Everything here exists to help people set up and enjoy their own servers, and to keep this community playing.
+>
 > **What this hub is not:** a file dump. We don't host Blizzard game files here (read [why](docs/01-legal-and-hosting.md)). We tell you **exactly what to download, from where, what version, how to verify it, and where every file goes** — with direct links where possible.
 
 ---
