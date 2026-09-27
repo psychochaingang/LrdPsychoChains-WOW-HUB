@@ -25,9 +25,9 @@
 | Know where every file goes | [sheets/PLACEMENT.md](sheets/PLACEMENT.md) |
 | See the master file list | [sheets/MANIFEST.md](sheets/MANIFEST.md) |
 | Verify a download | [sheets/CHECKSUMS.txt](sheets/CHECKSUMS.txt) |
-  | Launch the game (12.1 + TrinityCore) | [MidnightCore Launcher](docs/10-launcher.md) |
-  | See what changed recently (returning users) | [CHANGELOG.md](CHANGELOG.md) |
-  | Report a problem or ask for help | [Open an issue](https://github.com/psychochaingang/LrdPsychoChains-WOW-HUB/issues) |
+| Launch the game (12.1 + TrinityCore) | [MidnightCore Launcher](docs/10-launcher.md) |
+| See what changed recently (returning users) | [CHANGELOG.md](CHANGELOG.md) |
+| Report a problem or ask for help | [Open an issue](https://github.com/psychochaingang/LrdPsychoChains-WOW-HUB/issues) |
 
 ## 🎮 Game Clients (we provide guides + links + hashes)
 
