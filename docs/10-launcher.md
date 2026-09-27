@@ -60,7 +60,7 @@ Also included: Settings (client folder + portal), Verify client, Logs, Game fold
 | Check | Expected |
 |-------|----------|
 | Engine SHA-256 | `B5359A972F760905F572AAFC4066D945F6382CEC2A521D555DD58D2861EF7C1C` |
-| Zip SHA-256 | `AC9617A49DCB37DF23F065CF6126B2B6007BC646F450EB519975497B4A4D75F0` |
+  | Zip SHA-256 | `431D414E662BB3B7859D4D802EE195209E48BF603BB890E83B4359F4A23DF761` |
 | Client build | 12.1.0.69933 (`mcml --dry-run`) |
 | Ports | 3306 / 2119 / 9085 |
 
@@ -80,4 +80,11 @@ Read [Legal & Hosting](01-legal-and-hosting.md) before sharing anything.
 
 - The bundled official engine performs the patching; our own native patcher ships as a diagnostic
   (`mcml --native`) and is not used by default.
-- Built/tested on Windows with the stack above; other layouts work via Settings + env vars.
+  - Built/tested on Windows with the stack above; other layouts work via Settings + env vars.
+
+  ## Updates
+
+  - 2026-09-27 - Launcher 0.1.0 refresh: on a cold start the launcher now waits up to five
+    minutes for the world service to finish loading before launching the game (previously it
+    gave up after a few seconds and the game could open before the realm was reachable).
+    New zip hash above.

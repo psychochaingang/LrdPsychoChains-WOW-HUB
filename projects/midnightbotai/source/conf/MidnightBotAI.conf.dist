@@ -1,0 +1,143 @@
+###################################################################################################
+# MidnightBotAI
+#
+# This module is built into the worldserver as a script module. Copy this file to the worldserver
+# configuration directory as "MidnightBotAI.conf" (for example:
+# <worldserver working directory>/worldserver.conf.d/MidnightBotAI.conf). The worldserver loads
+# every "*.conf" file placed in that directory automatically at startup.
+#
+#    MidnightBotAI.Enable
+#        Description: Enables the MidnightBotAI module.
+#        Default:     1 - (Enabled)
+#                     0 - (Disabled)
+#
+#    MidnightBotAI.Spawning
+#        Description: Allows the module to spawn bot characters into the world.
+#                     When disabled (default) no bot is ever created and live server
+#                     behavior is unchanged. Spawning requires an enabled module
+#                     (MidnightBotAI.Enable = 1).
+#        Default:     0 - (Disabled)
+#                     1 - (Enabled)
+#
+#    MidnightBotAI.AutoSpawn
+#        Description: Automatically spawns every character from the persisted roster
+#                     once, 15 seconds after the worldserver finishes starting up.
+#                     Requires an enabled module (MidnightBotAI.Enable = 1) and
+#                     spawning enabled (MidnightBotAI.Spawning = 1). Used to bring
+#                     bots back automatically after a restart.
+#        Default:     0 - (Disabled)
+#                     1 - (Enabled)
+#
+#    MidnightBotAI.MaxBots
+#        Description: Maximum number of characters that can be held in the bot roster.
+#        Default:     8
+#
+#    MidnightBotAI.AccountPrefix
+#        Description: Prefix used for the accounts that bot characters belong to.
+#        Default:     "mbot"
+#
+#    MidnightBotAI.SummonOnSpawn
+#        Description: When enabled, a manual '.mbot spawn <name>' teleports the freshly
+#                     logged-in bot to the position of the command issuer. AutoSpawn at
+#                     server start is not affected (there is no command issuer there).
+#        Default:     0 - (Disabled)
+#                     1 - (Enabled)
+#
+#    MidnightBotAI.AutoParty
+#        Description: When enabled, a manual '.mbot spawn <name>' adds the bot to the
+#                     command issuer's party, creating a group for the issuer if needed.
+#                     AutoSpawn at server start is not affected (there is no command issuer).
+#        Default:     0 - (Disabled)
+#                     1 - (Enabled)
+#
+#    MidnightBotAI.CombatLog
+#        Description: Logs role-based AI decisions (attack/heal/nuke/strike/taunt/stop) to the
+#                     server log. Only state changes and successful cast attempts are logged.
+#                     The per-bot AI ring buffer used by '.mbot debug' is always kept.
+#        Default:     1 - (Enabled)
+#                     0 - (Disabled)
+#
+#    MidnightBotAI.CombatChat
+#        Description: Sends owner-facing combat feedback to the owner's chat, e.g.
+#                     "[MC] Tankbot hits Murloc Streamrunner for 302" and
+#                     "[MC] Healbot heals Test +15". Rate-limited to one message per bot
+#                     per second.
+#        Default:     1 - (Enabled)
+#                     0 - (Disabled)
+#
+#    MidnightBotAI.Stats
+#        Description: Posts a compact per-bot damage/heal stats block to the owner every
+#                     10 seconds while bots were recently in combat, and enables the
+#                     '.mb stats' report.
+#        Default:     1 - (Enabled)
+#                     0 - (Disabled)
+#
+#    MidnightBotAI.LootMethod
+#        Description: Default loot method applied to the owner's group whenever a bot joins
+#                     it. One of: ffa, roundrobin, master, group, needgreed.
+#        Default:     "group"
+#
+#    MidnightBotAI.LootThreshold
+#        Description: Default loot threshold applied with the loot method. One of: poor,
+#                     common, uncommon, rare, epic, legendary.
+#        Default:     "uncommon"
+#
+#    MidnightBotAI.LevelSync
+#        Description: Keeps bound bots at the owner's level: on the 10 s tick (and on
+#                     bind/autobind) a bot whose level differs is boosted through the same
+#                     path as '.mb boost'. Also equips level-appropriate gear upgrades.
+#        Default:     1 - (Enabled)
+#                     0 - (Disabled)
+#
+#    MidnightBotAI.LootRoll
+#        Description: Loot roll policy for bots. "pass" means bots never roll and the owner
+#                     keeps everything; "need" is reserved and currently behaves like pass.
+#        Default:     "pass"
+#
+#    MidnightBotAI.AutoTalents
+#        Description: Spends bot talent points automatically after every boost/level sync and
+#                     on the 10 s tick while points are free (talents unlock at level 10+;
+#                     below that the budget is zero and this is a no-op).
+#        Default:     1 - (Enabled)
+#                     0 - (Disabled)
+#
+#    MidnightBotAI.DebugFile
+#        Description: File '.mbot debug' writes its snapshot to, relative to the worldserver
+#                     working directory.
+#        Default:     "mbot-debug.txt"
+#
+#    MidnightBotAI.DebugAuto
+#        Description: Writes the same snapshot as '.mbot debug' to MidnightBotAI.DebugFile
+#                     every 10 seconds while at least one bot is active (overwritten).
+#        Default:     1 - (Enabled)
+#                     0 - (Disabled)
+#
+#    MidnightBotAI.Bootstrap
+#        Description: Semicolon-separated list of bots to create and roster at startup:
+#                     "Name:Race:Class[:Role];...". Characters that do not exist are created
+#                     through the normal '.mbot create' path, existing characters are kept,
+#                     and every entry is ensured to be in the roster. Role is optional:
+#                     tank/healer/dps/none (defaults to a role derived from the class).
+#                     Bootstrap only creates/rosters; logging in still happens via
+#                     AutoSpawn (15 seconds after startup) or '.mbot spawnall'.
+#        Default:     "" (empty list)
+#
+
+MidnightBotAI.Enable = 1
+MidnightBotAI.Spawning = 0
+MidnightBotAI.AutoSpawn = 0
+MidnightBotAI.MaxBots = 8
+MidnightBotAI.AccountPrefix = "mbot"
+MidnightBotAI.SummonOnSpawn = 0
+MidnightBotAI.AutoParty = 0
+MidnightBotAI.CombatLog = 1
+MidnightBotAI.CombatChat = 1
+MidnightBotAI.Stats = 1
+MidnightBotAI.LootMethod = "group"
+MidnightBotAI.LootThreshold = "uncommon"
+MidnightBotAI.LevelSync = 1
+MidnightBotAI.LootRoll = "pass"
+MidnightBotAI.AutoTalents = 1
+MidnightBotAI.DebugFile = "mbot-debug.txt"
+MidnightBotAI.DebugAuto = 1
+MidnightBotAI.Bootstrap = ""
