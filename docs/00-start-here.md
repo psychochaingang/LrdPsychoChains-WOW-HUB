@@ -1,5 +1,12 @@
 # Start Here — The Complete Journey
 
+> **Just want to play on WoW 12.1 quickly?** Grab the MidnightCore Launcher from the
+> [release page](https://github.com/psychochaingang/LrdPsychoChains-WOW-HUB/releases/tag/launcher-v0.1.0-preview),
+> extract it, run it and press **PLAY** (it starts your servers and opens the game by itself).
+> Optional AI party: download the **MidnightBotAI server module** from the same page.
+> Problems? [Open an issue](https://github.com/psychochaingang/LrdPsychoChains-WOW-HUB/issues)
+> with the last log lines and we will help.
+
 This document explains **everything** you need to go from "I want my own WoW server" to "I'm playing with bots in a dungeon" — the full picture, in order.
 
 ---

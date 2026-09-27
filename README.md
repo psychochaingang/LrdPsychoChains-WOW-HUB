@@ -1,5 +1,11 @@
 # LrdPsychoChains WOW HUB — LegionCore + AzerothCore
 
+> **Playing on WoW 12.1 with MidnightCore? Start here:**
+> 1. Download the **Launcher** zip from the [release page](https://github.com/psychochaingang/LrdPsychoChains-WOW-HUB/releases/tag/launcher-v0.1.0-preview)
+> 2. Extract it, run `LrdPsychoChains MidnightCore Launcher.exe`, press **PLAY** - it starts your servers, waits until the world is ready, patches the client and opens the game
+> 3. Want an AI party? Grab the optional **MidnightBotAI server module** from the same release page (details in [projects/midnightbotai](projects/midnightbotai/README.md))
+> 4. Stuck? [Open an issue](https://github.com/psychochaingang/LrdPsychoChains-WOW-HUB/issues) with your log lines - we answer there
+
 **Everything you need to run your own WoW private server and game clients — files, folders, versions, tools, and the exact traps nobody else documents.**
 
 > **What this hub is:** a complete, honest, tested guide collection for setting up WoW game clients (Vanilla → Legion) and private servers (AzerothCore 3.3.5a, LegionCore 7.3.5), plus our custom **LegionBotAI** playerbot system.

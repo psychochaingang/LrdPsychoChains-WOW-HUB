@@ -60,7 +60,7 @@ Also included: Settings (client folder + portal), Verify client, Logs, Game fold
 | Check | Expected |
 |-------|----------|
 | Engine SHA-256 | `B5359A972F760905F572AAFC4066D945F6382CEC2A521D555DD58D2861EF7C1C` |
-  | Zip SHA-256 | `431D414E662BB3B7859D4D802EE195209E48BF603BB890E83B4359F4A23DF761` |
+  | Zip SHA-256 | `69275993E2F2D570F29BD0A1F2D6E7C28254C1E26554B069BEF744E25B6ED2D3` |
 | Client build | 12.1.0.69933 (`mcml --dry-run`) |
 | Ports | 3306 / 2119 / 9085 |
 
@@ -82,6 +82,22 @@ Read [Legal & Hosting](01-legal-and-hosting.md) before sharing anything.
   (`mcml --native`) and is not used by default.
   - Built/tested on Windows with the stack above; other layouts work via Settings + env vars.
 
+  ## Super quick start (TL;DR)
+
+  1. Download the launcher zip from the release page.
+  2. Extract it anywhere permanent and run `LrdPsychoChains MidnightCore Launcher.exe`
+     (do not run it from inside the zip).
+  3. First time only: point Settings at your game client folder - the server and the
+     database are found automatically in the usual spots.
+  4. Press **PLAY**. The launcher starts the servers, waits until the world is ready,
+     patches the client and opens the game.
+  5. Play. For the optional AI party, also grab the MidnightBotAI server module pack
+     from the same release page - `QUICK-START.txt` inside the launcher zip has the
+     same steps with a quick test checklist.
+
+  Trouble? [Open an issue](https://github.com/psychochaingang/LrdPsychoChains-WOW-HUB/issues)
+  with the last launcher log lines - we answer there.
+
   ## Downloads (choose one or both)
 
   | Option | File | For whom |
@@ -89,7 +105,7 @@ Read [Legal & Hosting](01-legal-and-hosting.md) before sharing anything.
   | 1 - Launcher (recommended) | `LrdPsychoChains-MidnightCore-Launcher-0.1.0.zip` | Everyone who wants to play on their own server |
   | 2 - Bot module (optional) | `LrdPsychoChains-MidnightBotAI-Server-Module-4.8.zip` | Server owners who want an AI party (see `projects/midnightbotai/`) |
 
-  Bot module SHA-256: `90A9ED8477F05E9930774FC3DFEAE481B3B60C4C076066C9A83C75674B1D343A`
+  Bot module SHA-256: `04B544F5424AA8C912A4E16E5CAF429AF9D71F3D3A4B6D53FC7FD6351ED9D8D4`
 
   ## Updates
 
